@@ -1,0 +1,45 @@
+\section{Design}
+
+We consider patterns specified as a symbolic finite automata where each
+transition has a guard (propositional formula) whose predicates test the
+currently considered event against constants as well as events matched by
+preceding transitions.
+   
+Pattern matching algorithms require data sorted on time.
+In a map-reduce framework this makes the reducer the main bottleneck of the
+analysis, both at the network level (large amaounts of shuffled data) and at
+the processing level (in case of data-skew).
+
+
+
+We propose to significantly reduce the amount of data fed into the pattern
+matcher (reducer) by dropping in a map phase all the events that cannot take
+part in a successfull match.
+
+To do so we design a set of filters that while conservative, closely match the
+semantics of the patterns analysed.
+We propose three levels of abstraction.
+The first enforces the join constraints between different transitions as
+expressed by join predicates within the transition guards.
+The second one further imposes time windowing constraints (all events of a
+successfull match must occur within a timeout of the first event in the match).
+Finally the last one enforces ordering constraints between {\em consecutive}
+transitions of the pattern.
+
+In our approach we leverage the fact that a large class of symbolic finite
+automata fit within the fragment of star-free languages which
+have a corresponding FOL formula (possibly with counting quantifiers).
+Whenever that is not the case we can narrow the scope of our filters to the
+sections of the pattern that do.
+ 
+We relax these FOL formulas to produce precise filters, one per transition, 
+that can be evaluated independently on each mapper.
+Finally we further coarsen these filters to a set of relaxed filters
+that can be collected and tested in a time and space efficient manner (eg. bloom
+filters, time-interval maps).
+
+We explore the tradeoffs involved in the overheads incurred in building the
+filters and their accuracy. 
+
+
+

@@ -1,0 +1,34 @@
+\section{Intoduction}
+
+(Motivation) 
+Event-series pattern matching is widely used for behavioral/anomaly/causality
+analysis, for eg: network diagnostics, algorithmic
+trading, security breach detection.
+
+
+(Challenges)
+Warehoused data is being analysed by a wide range of queries thus it
+may not be clustered/sorted on time. 
+
+Analytics are being run both over fresh data as well as historical data,
+therefore the data management system needs to support both online and
+batching mode processing.
+
+
+(Approach)
+We design a set of relational-style optimizations for event-series pattern
+matching workloads.
+
+(Results)
+We provide X reduction in shuffled data and Y reduction in end-to-end latency
+for 3 workloads:
+i) telemetry analysis over the events produced by the Windows event-reporting
+infrastructure
+ii) Github queries
+iii) stock market algorithmic trading.
+
+
+
+ 
+
+
