@@ -50,3 +50,7 @@ tmp
 .project
 .texlipse
 main.synctex.gz
+*.aux
+*.bbl
+*.blg
+*.log
