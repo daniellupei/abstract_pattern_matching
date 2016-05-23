@@ -14,15 +14,15 @@ the processing level (in case of data-skew).
 
 We propose to significantly reduce the amount of data fed into the pattern
 matcher (reducer) by dropping in a map phase all the events that cannot take
-part in a successfull match.
+part in a successful match.
 
 To do so we design a set of filters that while conservative, closely match the
-semantics of the patterns analysed.
+semantics of the patterns analyzed.
 We propose three levels of abstraction.
 The first enforces the join constraints between different transitions as
 expressed by join predicates within the transition guards.
 The second one further imposes time windowing constraints (all events of a
-successfull match must occur within a timeout of the first event in the match).
+successful match must occur within a timeout of the first event in the match).
 Finally the last one enforces ordering constraints between {\em consecutive}
 transitions of the pattern.
 
@@ -38,7 +38,7 @@ Finally we further coarsen these filters to a set of relaxed filters
 that can be collected and tested in a time and space efficient manner (eg. bloom
 filters, time-interval maps).
 
-We explore the tradeoffs involved in the overheads incurred in building the
+We explore the trade-offs involved in the overheads incurred in building the
 filters and their accuracy. 
 
 

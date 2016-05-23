@@ -49,6 +49,7 @@ Temporary Items
 tmp
 .project
 .texlipse
+main.pdf
 main.synctex.gz
 *.aux
 *.bbl
