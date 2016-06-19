@@ -1,7 +1,11 @@
 \documentclass{sig-alternate-05-2015}
 
+\usepackage{mathtools}
 
 \begin{document}
+
+\input{macros}
+
 
 % Copyright
 \setcopyright{acmcopyright}
@@ -44,6 +48,35 @@ Todd Mytkowicz\\
 
 \maketitle
 \begin{abstract}
+Event-series pattern matching is a major component of data analytics pipelines
+enabling a wide range of system diagnostics tasks (from tracing network
+bottlenecks to detecting security breaches). Existing pattern-matching engines
+(e.g., Oracle's match recognize) expect their data to be sorted on time which is
+not the case in many practical scenarios where the physical layout of the data
+has to meet wider system requirements. This in turn leads to an expensive
+``shuffle the world'' stage wherein data are sorted and shuffled across the
+network.  Unfortunately, existing systems treat the pattern matching engine as a
+black box which prevents these systems from optimizing the entire data analytics
+pipeline (and in particular, this costly shuffle).
+
+To solve this problem, we adapt ideas from symbolic execution and abstract
+interpretation to filter data guaranteed not to match any pattern.  In
+particular, we demonstrate how to view an expressive class of regular-expression
+like patterns as relational calculus expressions.  On such a representation, we
+then introduce the idea of symbolic pattern matching, a linear time
+pre-processing step which filters out events from the input guaranteed not to
+match the pattern.  Symbolic pattern matching relies on abstract domains to
+first collect a set of conservative constraints for every transition of the
+pattern based on the events from the input that may match it. It then uses these
+transition constraints to perform a fixpoint computation over the state machine
+representation of the pattern, during which it eliminates transition constraints
+that cannot form a complete path, i.e., a path to a final state. Finally, the
+original stream of events is filtered based on the resulting set of constraints.
+
+We implemented and applied Symbolic pattern matching in SCOPE to an industrial
+benchmark (subset of Asimov telemetry queries) where we obtained up to 3 orders
+of magnitude reduction in shuffled data, 26\% average reduction in total
+processing time and 18\% average reduction in end-to-end latency.
 \end{abstract}
 
 \input{01_intro}
