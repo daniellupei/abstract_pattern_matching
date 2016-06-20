@@ -346,10 +346,19 @@ $\NotPrecedesP''^{\hashid{user}} \rightarrow \NotPrecedesP''$, where
 E_P(t_S..t_S + t_{out}, \hashid{user_S}) = \emptyset .
 \end{align*}
 
+Moreover, predicate abstraction also reveals the well known Bloom
+join algorithm as an instance of our approach, wrt.\ the join
+predicate $user_P = user_S$ from the original query. 
+This becomes apparent if we ignore time in the filter above:
+\begin{align*}
+&
+\NotPrecedesP'''^{\hashid{user}}(t_S, user_S) \coloneq 
+E_P(*, \hashid{user_S}) = \emptyset,
+\end{align*}
+and we use a bloomfilter to implement $E_P(*, \hashid{user_S})$.
 
-Thus far we presented just an instance of {\em predicate abstraction}, whereas a
-detailed discussion of other scenarios where it proves beneficial can be found
-in section~\ref{sec:pred_abstraction}.
+A detailed discussion of other scenarios where predicate abstraction proves
+beneficial can be found in section~\ref{sec:pred_abstraction}.
 
 
 

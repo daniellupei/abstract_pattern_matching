@@ -73,7 +73,7 @@ those data abstractions might prove too expensive.
 
 Predicate abstraction is an essential component of our approach
 allowing us to strike the right balance between the data reduction that the
-symbolic filters provide, on one hand, and the overheads introduced by their
+symbolic filters provide on one hand, and the overheads introduced by their
 data abstractions on the other.
 For instance, we may choose to discard
 predicates that have very low selectivity, i.e.\ the reduction in input data
@@ -81,6 +81,16 @@ that they provide does not justify the cost of enforcing them.
 Similarly, one may turn to predicate abstraction when dealing with patterns with
 a large number of join predicates or transitions, in order to mitigate the
 increased overheads incurred by their data abstractions.
+
+Considering that initial or final transitions typically have the fewest
+number of matching events, one might choose to generate filters that only
+consider the join predicates with respect to those transitions.
+Due to the low cardinality of the sets of events matching these transitions 
+the join predicates involving them are likely to have very high selectivity.
+Moreover, the data abstractions used to enforce them can achieve higher
+precision for the same operating costs.
+
+
 
 
 
