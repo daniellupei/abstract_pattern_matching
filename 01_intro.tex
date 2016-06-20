@@ -106,25 +106,25 @@ we first re-write the derived query using comprehension syntax.
 
 \begin{align*}
 E_S 
-&\coloneqq 
+&\coloneq 
 \{ (t_S, user_S) \mid 
    (n_S, t_S, user_S) \in Events .\ n_S = \text{``S''}
 \}
 \\
 E_{\oR} 
-&\coloneqq 
+&\coloneq 
 \{ (t_{\oR}, user_{\oR}) \mid 
    (n_{\oR}, t_{\oR}, user_{\oR}) \in Events .\ n_{\oR} \neq \text{``R''}
 \}
 \\
 E_P 
-&\coloneqq 
+&\coloneq 
 \{ (t_P, user_P) \mid 
    (n_P, t_P, user_P) \in Events .\ n_P = \text{``P''}
 \}
 \\
 Q 
-&\coloneqq 
+&\coloneq 
 \{ (user_S, t_S, t_P) \mid 
    (t_S, user_S) \in E_S .\ 
    (t_P, user_P) \in E_P .\
@@ -172,7 +172,7 @@ generate a {\em precise filter} for each transition in the pattern.
 For our example pattern we get the following filters:
 \begin{align*}
 M_S 
-&\coloneqq 
+&\coloneq 
 \{ (t_S, user_S) \mid 
    (t_S, user_S) \in E_S .\
 \\
@@ -184,7 +184,7 @@ M_S
 \}
 \\
 M_R 
-&\coloneqq 
+&\coloneq 
 \{ (n_R, t_R, user_R) \mid 
    \exists (\_, t_S, t_P) \in Q .\ 
 \\
@@ -193,7 +193,7 @@ M_R
 \}
 \\
 M_P 
-&\coloneqq 
+&\coloneq 
 \{ (t_P, user_P) \mid  
    (t_P, user_P) \in E_P .\ 
 \\
@@ -221,15 +221,20 @@ transition S but that will not be part of a complete match.
 \newcommand{\NotExistsP}{\ident{NotExistsP}}
 \newcommand{\NotPrecedesP}{\ident{NotPrecP}}
 
+\newcommand{\interval}[1]{\lfloor #1 \rceil}
+\newcommand{\uinterval}[1]{\lceil #1 \rfloor}
+\newcommand{\hashid}[1]{\langle #1 \rangle}
+
+
 \begin{align*}
 &
-\oMS \coloneqq 
+\oMS \coloneq 
 \{ (t_S, user_S) \mid (t_S, user_S) \in E_S .\ 
    \NotPrecedesP(t_S, user_S) 
 \}
 \\
 &
-\NotPrecedesP(t_S, user_S) \coloneqq 
+\NotPrecedesP(t_S, user_S) \coloneq 
 \forall\; (t_P, \_) \in E_P(t_S..t_S + t_{out}, user_S) .\ 
 \\
 &\qqqquad\qquad\quad
@@ -243,18 +248,116 @@ do not have only ``R'' events between themselves and every succeeding event
 In order to minimize the cost of filtering we use {\em data
 abstraction} to compute time and space efficient representations of sets $E_S$
 and $E_{\oR}$.
-For example, one could choose to abstract over time and coarsen timestamps into
-time intervals. Then the time dimension of sets $E_S$, $E_{\oR}$ could be
-efficiently encoded and queried as interval maps, i.e.\ bit vectors where each
-bit corresponds to a time interval and a set bit would denote the fact that an
-event has occurred within the corresponding interval.
+For example, one could choose to abstract over time and coarsen timestamps $t$
+into time intervals $\interval{t}$. 
+Then, the time dimension of sets $E_S$, $E_{\oR}$ could be efficiently encoded
+and queried as interval maps, i.e.\ bit vectors where each bit corresponds to a
+time interval and a set bit would denote the fact that an event has occurred
+within the corresponding interval.
+Using this abstraction the filtering predicate becomes:
+\begin{align*}
+&
+\NotPrecedesP^{\interval{t}}(t_S, user_S) \coloneq 
+\forall\; (t_P, \_) \in E_P(\interval{t_S..t_S + t_{out}}, user_S) .\ 
+\\
+&
+\qqqquad\qqquad
+E_{\oR}(\uinterval{t_S..t_P}, user_S) \neq \emptyset ,
+\end{align*}
+where in order to maintain conservativeness (ie.\
+$\NotPrecedesP^{\interval{t}} \rightarrow \NotPrecedesP$) we had to
+over-approximate the $t_S..t_S + t_{out}$ range but under-approximate the
+$t_S..t_P$ interval.
+Thus, we note that, depending on the filter, the data abstractions that we
+use must be able to provide both over- and under- approximations of the original
+sets.
+
+If on the other hand we abstract over user ids via hashing, that is
+use a compact representation of sets $E_S$, $E_{\oR}$ that stores time
+information only per user hash bucket as opposed to individual user ids, then
+the resulting symbolic filter:
+\begin{align*}
+&
+\NotPrecedesP^{\hashid{user}}(t_S, user_S) \coloneq 
+\\
+&
+\forall\; (t_P, \_) \in E_P(t_S..t_S + t_{out}, \hashid{user_S}) .\ 
+E_{\oR}(t_S..t_P, \hashid{user_S}) \neq \emptyset ,
+\end{align*}
+does not satisfy our safety requirement 
+(i.e.\ $\NotPrecedesP^{\hashid{user}} \nrightarrow \NotPrecedesP$).
+This happens because hashing can only provide over-approximations of sets while,
+in order to ensure conservativeness, the abstractions used for this filter need
+to provide both over and under approximations.
+
+One way to address this issue is to re-write the precise filter using min
+aggregates:
+\begin{align*}
+&
+\NotPrecedesP'(t_S, user_S) \coloneq 
+\\
+&\qquad
+\min \{ t_{\oR} \mid (t_{\oR}, \_) \in E_{\oR}(t_S..t_S + t_{out}, user_S) \}
+\\
+&\qquad
+< \min \{ t_P \mid (t_P, \_) \in E_P(t_S..t_S + t_{out}, user_S) \}.
+\end{align*}
+Now, we can safely use hashing to abstract over user ids based on the following
+symbolic filter:
+\begin{align*}
+&
+\NotPrecedesP'^{\hashid{user}}(t_S, user_S) \coloneq 
+\\
+&\qquad
+\max_{u \in \hashid{user_S}}
+\min \{ t_{\oR} \mid (t_{\oR}, \_) \in E_{\oR}(t_S..t_S + t_{out}, u) \}
+\\
+&\qquad
+< 
+\min_{u \in \hashid{user_S}}
+\min \{ t_P \mid (t_P, \_) \in E_P(t_S..t_S + t_{out}, u) \}.
+\end{align*}
+
+
+While for our example it was possible to come up with an alternative formulation
+of the filter, this may not always be the case. 
+And even in the cases where it is, the alternatives may be too expensive to
+materialize and query (for eg.\ evaluating $\NotPrecedesP'^{\hashid{user}}$ is
+clearly more costly than $\NotPrecedesP^{\interval{t}}$).
+Consequently, 
+we introduce {\em predicate abstraction}, a technique
+that strengthens the filter by discarding those predicates that cannot be safely
+or efficiently abstracted over.
+For instance, our filter could be strengthened into:
+\begin{align*}
+&
+\NotPrecedesP''(t_S, user_S) \coloneq 
+E_P(t_S..t_S + t_{out}, user_S) = \emptyset,
+\end{align*} 
+which eliminates only those search events that are not followed by a purchase
+event within $t_{out}$, and was obtained from the base case of
+the universal quantifier in $\NotPrecedesP$.
+Since this version only requires over-approximation, one can safely use hashing
+to abstract over the user id dimension of $E_P$, i.e.\ 
+$\NotPrecedesP''^{\hashid{user}} \rightarrow \NotPrecedesP''$, where
+\begin{align*}
+&
+\NotPrecedesP''^{\hashid{user}}(t_S, user_S) \coloneq 
+E_P(t_S..t_S + t_{out}, \hashid{user_S}) = \emptyset .
+\end{align*}
+
+
+Thus far we presented just an instance of {\em predicate abstraction}, whereas a
+detailed discussion of other scenarios where it proves beneficial can be found
+in section~\ref{sec:pred_abstraction}.
+
 
 
 
 \begin{comment}
 \\
 &
-\NotExistsP(t_S, user_S) \coloneqq 
+\NotExistsP(t_S, user_S) \coloneq 
 E_P(t_S..t_S+t_{out}, user_S) = \emptyset
 
 These filters are designed to be applied independently over the input without

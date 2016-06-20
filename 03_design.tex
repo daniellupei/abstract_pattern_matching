@@ -45,5 +45,50 @@ filters and their accuracy.
 
 
 
+\subsection{Precise filter generation}
+\label{sec:data_abstraction}
 
 
+
+
+
+\subsection{Symbolic filters via data abstraction}
+\label{sec:data_abstraction}
+
+
+
+
+\subsection{Predicate abstraction}
+\label{sec:pred_abstraction}
+
+
+We propose {\em predicate abstraction}, ie.\ the technique of strengthening the
+precise filters by discarding some of their predicates, as a way of overcoming
+the challenges that can arise when turning precise filters into symbolic filters
+via data abstraction.
+For example, it may happen that for some predicate types
+(for eg. $x.Contains(y)$, where $x$, $y$ are strings) we simply cannot provide
+any data abstraction, and even for those that we can, materializing and querying
+those data abstractions might prove too expensive.
+
+Predicate abstraction is an essential component of our approach
+allowing us to strike the right balance between the data reduction that the
+symbolic filters provide, on one hand, and the overheads introduced by their
+data abstractions on the other.
+For instance, we may choose to discard
+predicates that have very low selectivity, i.e.\ the reduction in input data
+that they provide does not justify the cost of enforcing them.
+Similarly, one may turn to predicate abstraction when dealing with patterns with
+a large number of join predicates or transitions, in order to mitigate the
+increased overheads incurred by their data abstractions.
+
+
+
+
+
+
+
+
+
+
+ 
