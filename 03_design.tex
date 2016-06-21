@@ -15,9 +15,10 @@ the processing level (in case of data-skew).
 We propose to significantly reduce the amount of data fed into the pattern
 matcher (reducer) by dropping in a map phase all the events that cannot take
 part in a successful match.
-
 To do so we design a set of filters that while conservative, closely match the
 semantics of the patterns analyzed.
+
+\begin{comment}
 We propose three levels of abstraction.
 The first enforces the join constraints between different transitions as
 expressed by join predicates within the transition guards.
@@ -25,6 +26,7 @@ The second one further imposes time windowing constraints (all events of a
 successful match must occur within a timeout of the first event in the match).
 Finally the last one enforces ordering constraints between {\em consecutive}
 transitions of the pattern.
+\end{comment}
 
 In our approach we leverage the fact that a large class of symbolic finite
 automata fit within the fragment of star-free languages which
@@ -32,30 +34,88 @@ have a corresponding FOL formula (possibly with counting quantifiers).
 Whenever that is not the case we can narrow the scope of our filters to the
 sections of the pattern that do.
  
-We relax these FOL formulas to produce precise filters, one per transition, 
+Based on these FOL formulas we produce precise filters, one per transition, 
 that can be evaluated independently on each mapper.
 Finally we further coarsen these filters to a set of relaxed filters
 that can be collected and tested in a time and space efficient manner (eg. bloom
 filters, time-interval maps).
 
-We explore the trade-offs involved in the overheads incurred in building the
-filters and their accuracy. 
+We explore the trade-offs between the overheads incurred in building/querying
+the filters and their accuracy. 
 
 
+\subsection{Translating patterns into queries}
+
+We assume as input an automata where each transition $X$ is annotated by a
+predicate $p_X$ that may refer to the fields of the currently considered event,
+as well as the events matched by the preceding transitions within the current
+run.
+To streamline the presentation we begin by considering automatas with only
+cycles of length 1 and we distinguish between cycle transitions and
+non-cycle transitions.
+
+
+The translation process produces one query $Q_X$ per non-cycle transition $X$
+and one query $Q_i$ per node $i$, excluding the initial node.
+The transition queries $Q_X$ compute partial matches corresponding to the paths
+ending with transition $X$.
+Analogously, the node queries $Q_i$ produce partial matches corresponding to the
+paths between the starting node and node $i$.
+If a node $i$ is an accepting node then its query will return complete matches,
+thus the final query of the automata is obtained by unioning all the queries
+generated for the automata's accepting nodes.
+
+
+The schema of these queries consists of a group of fields for each non-cycle
+transition that may occur along its associated set of paths. If a transition is
+triggered within a partial match then its corresponding group of fields records
+the timestamp of the event that triggered it along with any other event
+attributes that may be referenced by the predicates of succeeding transitions.
+On the other hand, if a transition is not triggered in a particular partial
+match then its group of fields is left void.
+
+
+The translation process iterates in topological order over the nodes of the DAG
+obtained by ignoring the cycle transitions of the automata.
+At each node $i$, it first generates the queries for all its incoming
+non-cycle transitions $Q_X$ and then $Q_i$ is defined as their union. 
+The schema of $Q_i$ is established as the
+union of the schemas of the incoming transitions $Q_X$, and the necessary tuple
+mapping from the schema of $Q_X$ to the schema of $Q_i$ is also undergone.
+
+The query for non-cycle transition $X$ with source node $k$ is generated as a
+join between the partial matches produced by query $Q_k$ and the input
+relation of events.
+The possible event matches $e_X$ for transition $X$ are constrained based on the
+transition's predicate $p_X$, and $e_X$'s timestamp which should be greater than
+that of the latest event $e_k$ from the partial match computed by $Q_k$.
+In addition, an inner query specifies that no other event should occur between
+$e_k$ and $e_X$, apart from those matching a cycle transition on node $k$, if
+such a transition should exist.
 
 
 
 \subsection{Precise filter generation}
-\label{sec:data_abstraction}
+\label{sec:prec_filter_generation}
 
+Based on the automata query $Q$ derived in the previous section we can generate
+a set of precise filters, one per transition, such that if an event does not match
+any of them, it is guaranteed not to contribute to any complete match.
 
+The precise filter corresponding to a non-cycle transition $X$ is obtained from
+$Q$ by projecting away (i.e.\ existentially quantifying) all the other transitions
+from the complete match returned by $Q$.
 
-
+For cycle transitions $Y$ on a node $k$ we define its precise filter as a
+conjunction between 
+a) the associated predicate $p_Y$ while existentially quantifying its join
+attributes over the fields stored in the complete matches returned by $Q$, and
+b) the time constraint specifying they should only occur between events matching
+an incoming and an outgoing transition of $k$ within a complete match produced
+by $Q$.
 
 \subsection{Symbolic filters via data abstraction}
 \label{sec:data_abstraction}
-
-
 
 
 \subsection{Predicate abstraction}
@@ -67,7 +127,7 @@ precise filters by discarding some of their predicates, as a way of overcoming
 the challenges that can arise when turning precise filters into symbolic filters
 via data abstraction.
 For example, it may happen that for some predicate types
-(for eg. $x.Contains(y)$, where $x$, $y$ are strings) we simply cannot provide
+(for eg.\ $x.Contains(y)$, where $x$, $y$ are strings) we simply cannot provide
 any data abstraction, and even for those that we can, materializing and querying
 those data abstractions might prove too expensive.
 
