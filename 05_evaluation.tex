@@ -1,9 +1,10 @@
+\section{Evaluation}
 
-\begin{figure}[t]
+\begin{figure}
 \centering
 
 \begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 2cm 0.9cm 2.15cm,
+\includegraphics[clip, trim=0.8cm 1.5cm 0.9cm 2.15cm,
 width=\columnwidth]{graphs/data_red.pdf}
 \caption{Processed data reduction}
 \label{fig:data_red}
@@ -12,37 +13,40 @@ width=\columnwidth]{graphs/data_red.pdf}
 \begin{subfigure}[t]{\columnwidth}
 \includegraphics[clip, trim=0.8cm 2cm 0.9cm 2cm,
 width=\columnwidth]{graphs/processing_red.pdf}
-\caption{Processing time reduction}
+\caption{Processing time speedup}
 \label{fig:processing_red}
 \end{subfigure}
 ~
 \begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 1.5cm 0.9cm 1cm,
+\includegraphics[clip, trim=0.8cm 2cm 0.9cm 2cm,
 width=\columnwidth]{graphs/latency_red.pdf}
-\caption{Latency reduction}
+\caption{Latency speedup}
 \label{fig:latency_red}
 \end{subfigure}
 
-\caption{Reduction ratios of the processed data, processing time and latency
-when using abstract filters divided by the corresponding baseline measures.}
+\caption{Reduction ratios of processed data and processing speedups when using
+abstract filters wrt.\ the corresponding baseline measures.}
 \end{figure}
 
 
 
 
 
-\section{Evaluation}
 
 We tested our approach on 2 workloads:
-i) patterns over telemetry events collected within a 2 hours interval by the
-Asimov system, and 
-ii) repository analytics over the Github dataset consisting of events collected
-between 2011 and 2016.
-
-
+i) Asimov, consisting of 15 patterns (A1-15) matched over telemetry events
+collected within a 2 hours interval by the Asimov system, and 
+ii) GitHub, performing repository analytics (patterns G1-3) over the GitHub
+dataset consisting of events collected between 2011 and 2016.
+All transitions in a pattern have a main key constraint, i.e.\ all events in a
+match should belong to the same device for the Asimov workload, or the same
+repository for the GitHub patterns, and a time constraint, i.e.\ all events 
+considered should occur within a timeout from the initial event in the match.
+In addition, some patterns also have a secondary key constraint between some of
+their transitions.
 
 We assess the benefits provided by our approach in terms of the ratio of
-selected events vs input events, the time it takes to complete the query
+input events vs selected events, the time it takes to complete the query
 (latency), and the total execution time across the processing nodes of the
 cluster.
 
@@ -59,8 +63,8 @@ iii) filter the input events based on the abstract filter, and
 iv) perform the reduction step over the remaining events. 
 
 
-In addition we conduct experiments to highlight the filtering potential of
-different join predicates, as well as their sensitivity wrt.\ the amount of
+Finally, we use query A5 to highlight the individual filtering potential
+of different join predicates, as well as their sensitivity wrt.\ the amount of
 state dedicated to their symbolic representation.
 
 
@@ -69,13 +73,111 @@ state dedicated to their symbolic representation.
 
 In order to establish the raw potential of our approach we look at the amount of
 data that is discarded by the abstract filters that we build.
-We note that the baseline consists of events whose type matches the event type
-of a transition in the query.
+We note that the baseline consists only of events whose type matches the event
+type of a transition in the query.
+
+Figure~\ref{fig:data_red} shows on a logarithmic scale the ratio between the
+data processed by the baseline approach and the data processed by our solution
+when considering different join predicates for building the abstract filters.
+In particular, we look at three types of join predicates: those referencing
+the main join key of the query (MainKey), those imposing constraints on the
+timestamp of matching events (Time), and those referencing a secondary join key
+(SecondaryKey).
+We report the results provided by the MainKey filter as well as its combination
+with the Time and SecondaryKey filter (for queries with joins on a secondary
+key).
+ 
+For 12 out of the 18 queries in our workload we obtain at least a 10x reduction
+in the amount of data that has to be considered by the pattern matcher, with 3
+of them ending up processing 5 orders of magnitude less data.
+The other 6 queries exhibit modest or no data reduction. This is mainly due to
+the precision lost by our abstract filters, as well as the fact that not all
+join predicates from a query can be efficiently abstracted over. 
+
+While incorporating extra join predicates in the abstract filters leads to
+further savings, it is dependent on the query and the stream of events which
+additional join predicate would provide the most benefits.
+In our workload we observe that adding the Time filter for queries A5 and A8 
+provides the biggest improvement while for queries A2-4, A10, A14 and G1 the
+SecondaryKey filter is more advantageous. 
+Due to this variability one has to decide on a query by query basis which join
+predicates to use and how much state to allocate for them within the abstract
+filter.
+For our workload we assign to the MainKey, Time and SecondaryKey filters between
+16KB and 4MB, 8B and 180B, and 2B and 8B, respectively.
+This allocation has been chosen under the constraint of a total size for the
+abstract filter in the order of megabytes and while considering the
+particularities of queries, for example, we take into account the fact that a
+query with a large timeout window would not benefit from a finegrained Time
+filter.
 
 
-\subsection{Total processing time reduction}
+
+\subsection{Total processing time speedup}
+
+In the following we look at the total processing cost across all nodes in the
+cluster.
+This is a particularly relevant metric for cluster setups that allow workload
+consolidation or data centers that charge users based on total number of
+``processing hours'' consumed.
+Figure~\ref{fig:processing_red} shows speedups of 25\% to 114\% for 11 out of
+the 18 queries, while 5 patterns experience slowdowns of at most 38\%.
+The slowdowns are a consequence of performing an additional pass over the input
+in order to build the abstract filters, with little or no benefit in terms of
+discarded events.
+
+We also remark that the additional reduction in data provided by the Time or
+SecondaryKey filters does not always translate in lower processing time. This
+happens for queries where the default MainKey filter already drastically reduces
+the amount of data that needs to be processed by the pattern matcher. 
+Therefore the performance gain from further reduction is easily canceled by the
+cost of building the additional filters.
 
 
-\subsection{Latency reduction}
+
+\subsection{Latency speedup}
+
+
+In terms of end-to-end running times we record speedups between 8\% and 78\%
+for 8 out of the 18 queries in our workload, while for 4 of them our
+approach performs within 5\% of the baseline (see Figure~\ref{fig:latency_red}).
+Just like in the case of processing times, the slowdowns in latency mainly
+correspond to queries for whom the abstract filters do not significantly reduce
+the amount of data processed by the pattern matcher (below 5x).
+
+
+We examine the performance of queries A12 and A13 as it highlights another
+important factor in the latency speedup achieved by our approach.
+While for both queries the abstract filters discard a significant number of the
+input events and as such have smaller total processing times than the baseline,
+only for A12 this translates in smaller end-to-end running times.
+This happens due to the difference in the initial size of the input, 1.2TB for
+A12 vs 307GB for A13, which when processed on a 85 nodes cluster results in
+average running times of the reduction phase of 3.8 minutes for A12 vs 46
+seconds for A13. 
+Even though in our approach the reduction phase for A13 takes only 5.6 seconds
+on average due to the smaller number of events being processed, that is not
+enough to compensate for the additional latency introduced by the phases that
+build and broadcast the abstract filters.
+While the latency of these phases can be minimized by decentralizing the process
+of building the abstract filters, developing and deploying such techniques falls 
+outside the scope of our current work.
+% same reason for A15
+
+
+
 
 \subsection{Symbolic state size vs filtering ratio tradeoff}
+
+
+
+
+
+
+
+
+
+
+
+
+
