@@ -1,69 +1,5 @@
 \section{Evaluation}
 
-\begin{figure}
-\centering
-
-\begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 1.5cm 0.9cm 2.15cm,
-width=\columnwidth]{graphs/data_red.pdf}
-\caption{Processed data reduction}
-\label{fig:data_red}
-\end{subfigure}
-~
-\begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 2cm 0.9cm 2cm,
-width=\columnwidth]{graphs/processing_red.pdf}
-\caption{Processing time speedup}
-\label{fig:processing_red}
-\end{subfigure}
-~
-\begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 2cm 0.9cm 2cm,
-width=\columnwidth]{graphs/latency_red.pdf}
-\caption{Latency speedup}
-\label{fig:latency_red}
-\end{subfigure}
-
-\caption{Reduction ratios of processed data and processing speedups when using
-abstract filters wrt.\ the corresponding baseline measures.}
-\end{figure}
-
-
-
-\begin{figure}[tp]
-\centering
-
-\begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 3.5cm 0.9cm 2.15cm,
-width=\columnwidth]{graphs/A5_breakdown.pdf}
-\caption{A5}
-\label{fig:A5}
-\end{subfigure}
-~
-\begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 4cm 0.9cm 4cm,
-width=\columnwidth]{graphs/A3_breakdown.pdf}
-\caption{A3}
-\label{fig:A3}
-\end{subfigure}
-
-\caption{Breakdown of the total processing time (in hours) for queries A5 and
-A3.}
-\label{fig:breakdown}
-\end{figure}
-
-
-\begin{figure}[tp]
-\centering
-
-\includegraphics[clip, trim=0cm 3.8cm 0.3cm 10cm,
-width=\columnwidth]{graphs/A5_tradeoff.pdf}
-\caption{Tradeoff for query A5 between filter size (1024KB-8192KB) and data
-reduction for different filter configurations and with different granularities
-for the MainKey filter (65K,512K,2M).}
-\label{fig:tradeoff}
-\end{figure}
-
 
 
 
@@ -87,6 +23,33 @@ We also use query A5 to highlight the individual filtering potential
 of different join predicates, as well as their sensitivity wrt.\ the amount of
 state dedicated to their symbolic representation.
 
+\begin{figure}[t!]
+\centering
+
+\begin{subfigure}[t]{\columnwidth}
+\includegraphics[clip, trim=0.8cm 1.6cm 0.9cm 1.6cm,
+width=\columnwidth]{graphs/data_red.pdf}
+\caption{Processed data reduction}
+\label{fig:data_red}
+\end{subfigure}
+~
+\begin{subfigure}{\columnwidth}
+\includegraphics[clip, trim=0.8cm 2cm 0.9cm 1.8cm,
+width=\columnwidth]{graphs/processing_red.pdf}
+\caption{Processing time speedup}
+\label{fig:processing_red}
+\end{subfigure}
+~
+\begin{subfigure}{\columnwidth}
+\includegraphics[clip, trim=0.8cm 2cm 0.9cm 1.8cm,
+width=\columnwidth]{graphs/latency_red.pdf}
+\caption{Latency speedup}
+\label{fig:latency_red}
+\end{subfigure}
+
+\caption{Reduction ratios of processed data and processing speedups when using
+abstract filters wrt.\ the corresponding baseline measures.}
+\end{figure}
 
 
 \subsection{Processed data reduction}
@@ -134,7 +97,22 @@ filter.
 
 
 
-\subsection{Abstract filter size vs filtering ratio}
+
+
+\begin{figure}[tp]
+\centering
+
+\includegraphics[clip, trim=0cm 3.8cm 0.3cm 3.2cm,
+width=\columnwidth]{graphs/A5_tradeoff.pdf}
+\caption{Tradeoff for query A5 between filter size (1024KB-8192KB) and data
+reduction for different filter configurations and with different granularities
+for the MainKey filter (65K,512K,2M).}
+\label{fig:tradeoff}
+\end{figure}
+
+
+
+\subsection{Abstract filter size vs reduction ratio}
 
 We vary the size of the abstract filter that we build as well as its
 configuration in order to asses the impact on the reduction ratio it provides.
@@ -146,9 +124,34 @@ Since the filters we build are multiplicative in their composition, the
 granularity afforded to the Time and SecondaryKey filters varies between 4 and
 1024 distinct values depending on the granularity of the MainKey filter as well
 as the total size of the abstract filter.
-In addition we record for reference the reduction of just the MainKey filter for
-its different configurations.
-From the results presented 
+In addition we record for reference the reduction in data achieved just by the
+MainKey filter for its different configurations.
+
+From the results presented in figure~\ref{fig:tradeoff} we conclude that for
+query A5, MainKey+Time is the most effective configuration as it provides the
+most reduction in the number of input events irrespective of the other
+parameters of the abstract filter. As expected, the bigger the size of the
+abstract filter the larger is the reduction rate achieved.
+We also note that the distribution of state amongst the components of the
+abstract filter is also important, as refining the granularity of only one of
+its components while keeping the total size of the filter fixed can experience a
+sweetspot beyond which the reduction rate is negatively impacted.
+This is reflected in our results for the MainKey+Time configuration where the
+512K granularity setting for the MainKey component outperforms the 2M setting
+across all filter sizes.
+The drop in the reduction rate is a consequence of the fact that the MainKey
+filter reaches a plateau, beyond which increasing its granularity no longer
+increases the reduction rate, while decreasing the granularity of the Time
+filter is bound to decrease its filtering power.
+
+There is also a knock-on effect between the different components of the abstract
+filter, as a poor choice for the granularity of one component can inhibit the
+filtering potential of the other components as well.
+For example, in query A5 a too small granularity for the MainKey filter (65K
+setting in figure~\ref{fig:tradeoff}) results in poor performance for the
+SecondaryKey component as well, as it cannot cope with the large number of
+events and their associated secondary keys it needs to discriminate between.
+Notably, the Time component is less susceptible to this issue. 
 
 
 
@@ -199,6 +202,34 @@ A similar situation occurs in query A3 where the sweet-spot is provided by the
 combination of MainKey and Time predicates, even though the combination of
 Main and Secondary Key filters manages to discard the largest number of events 
 (figure~\ref{fig:A3}).
+
+
+
+
+
+\begin{figure}[tp]
+\centering
+
+\begin{subfigure}[t]{\columnwidth}
+\includegraphics[clip, trim=0.8cm 3.5cm 0.9cm 3.5cm,
+width=\columnwidth]{graphs/A5_breakdown.pdf}
+\caption{A5}
+\label{fig:A5}
+\end{subfigure}
+~
+\begin{subfigure}[t]{\columnwidth}
+\includegraphics[clip, trim=0.8cm 4cm 0.9cm 4cm,
+width=\columnwidth]{graphs/A3_breakdown.pdf}
+\caption{A3}
+\label{fig:A3}
+\end{subfigure}
+
+\caption{Breakdown of the total processing time for queries A5 and
+A3.}
+\label{fig:breakdown}
+\end{figure}
+
+
 
 
 \subsection{Latency speedup}
