@@ -30,6 +30,40 @@ abstract filters wrt.\ the corresponding baseline measures.}
 
 
 
+\begin{figure}[tp]
+\centering
+
+\begin{subfigure}[t]{\columnwidth}
+\includegraphics[clip, trim=0.8cm 3.5cm 0.9cm 2.15cm,
+width=\columnwidth]{graphs/A5_breakdown.pdf}
+\caption{A5}
+\label{fig:A5}
+\end{subfigure}
+~
+\begin{subfigure}[t]{\columnwidth}
+\includegraphics[clip, trim=0.8cm 4cm 0.9cm 4cm,
+width=\columnwidth]{graphs/A3_breakdown.pdf}
+\caption{A3}
+\label{fig:A3}
+\end{subfigure}
+
+\caption{Breakdown of the total processing time (in hours) for queries A5 and
+A3.}
+\label{fig:breakdown}
+\end{figure}
+
+
+\begin{figure}[tp]
+\centering
+
+\includegraphics[clip, trim=0cm 3.8cm 0.3cm 10cm,
+width=\columnwidth]{graphs/A5_tradeoff.pdf}
+\caption{Tradeoff for query A5 between filter size (1024KB-8192KB) and data
+reduction for different filter configurations and with different granularities
+for the MainKey filter (65K,512K,2M).}
+\label{fig:tradeoff}
+\end{figure}
+
 
 
 
@@ -37,7 +71,7 @@ We tested our approach on 2 workloads:
 i) Asimov, consisting of 15 patterns (A1-15) matched over telemetry events
 collected within a 2 hours interval by the Asimov system, and 
 ii) GitHub, performing repository analytics (patterns G1-3) over the GitHub
-dataset consisting of events collected between 2011 and 2016.
+dataset consisting of events collected over a 5 years period.
 All transitions in a pattern have a main key constraint, i.e.\ all events in a
 match should belong to the same device for the Asimov workload, or the same
 repository for the GitHub patterns, and a time constraint, i.e.\ all events 
@@ -45,25 +79,11 @@ considered should occur within a timeout from the initial event in the match.
 In addition, some patterns also have a secondary key constraint between some of
 their transitions.
 
-We assess the benefits provided by our approach in terms of the ratio of
-input events vs selected events, the time it takes to complete the query
-(latency), and the total execution time across the processing nodes of the
-cluster.
-
-
-We further break down the {\em baseline} execution of a query into the time it
-takes to 
-i) read and sort the data, and 
-ii) perform the reduction step.
-On the other hand for our approach we look at the time it takes to 
-i) read the data and build the symbolic state associated with each transition,
-ii) reduce the symbolic state associated to each transition down to an abstract
-filter for the entire query and broadcast it back to every mapper,
-iii) filter the input events based on the abstract filter, and
-iv) perform the reduction step over the remaining events. 
-
-
-Finally, we use query A5 to highlight the individual filtering potential
+We assess the benefits provided by our approach in terms of 
+the ratio of input events vs selected events, 
+the total execution time across the processing nodes of the cluster,
+and the time it takes to complete the query (latency).
+We also use query A5 to highlight the individual filtering potential
 of different join predicates, as well as their sensitivity wrt.\ the amount of
 state dedicated to their symbolic representation.
 
@@ -113,6 +133,25 @@ filter.
 
 
 
+
+\subsection{Abstract filter size vs filtering ratio}
+
+We vary the size of the abstract filter that we build as well as its
+configuration in order to asses the impact on the reduction ratio it provides.
+In particular, we experimented for query A5 with filters of sizes between 1024
+to 8192KB and with a granularity for the MainKey filter between 65K to 2M
+distinct values. For each abstract filter size and MainKey granularity we devote
+the rest of available space to either the Time or the SecondaryKey filter.
+Since the filters we build are multiplicative in their composition, the
+granularity afforded to the Time and SecondaryKey filters varies between 4 and
+1024 distinct values depending on the granularity of the MainKey filter as well
+as the total size of the abstract filter.
+In addition we record for reference the reduction of just the MainKey filter for
+its different configurations.
+From the results presented 
+
+
+
 \subsection{Total processing time speedup}
 
 In the following we look at the total processing cost across all nodes in the
@@ -120,25 +159,52 @@ cluster.
 This is a particularly relevant metric for cluster setups that allow workload
 consolidation or data centers that charge users based on total number of
 ``processing hours'' consumed.
-Figure~\ref{fig:processing_red} shows speedups of 25\% to 114\% for 11 out of
-the 18 queries, while 5 patterns experience slowdowns of at most 38\%.
+Figure~\ref{fig:processing_red} shows speedups of 1.25x to 2.14x for 11 out of
+the 18 queries, while 5 patterns experience slowdowns of at most 0.62x.
 The slowdowns are a consequence of performing an additional pass over the input
 in order to build the abstract filters, with little or no benefit in terms of
 discarded events.
 
-We also remark that the additional reduction in data provided by the Time or
-SecondaryKey filters does not always translate in lower processing time. This
-happens for queries where the default MainKey filter already drastically reduces
+In order to highlight the tradeoffs of our approach we break down the {\em
+baseline} execution of a query into the time it takes to 
+i) read and sort the data, and 
+ii) perform the reduction step.
+On the other hand for our technique we look at the time it takes to 
+i) read the data, 
+ii) build the symbolic state associated with each transition,
+iii) reduce the symbolic state associated to each transition down to an abstract
+filter for the entire query and broadcast it back to every mapper,
+iv) filter the input events based on the abstract filter, and
+v) perform the reduction step over the remaining events. 
+
+By discarding some of the input events our solution cuts the cost
+of the sorting and reduction phases when compared to the baseline approach,
+while adding the overhead of building and applying the abstract filters.
+When the number of events removed is significant this leads to an overall lower
+processing time as can be seen in figure~\ref{fig:breakdown}.
+Since every join predicate included in the abstract filter incurs additional
+costs when building and applying the filter, to maximize performance one should
+consider only the smallest/cheapest set of predicates able to filter the input
+down to the order of gigabytes/tens of gigabytes.
+
+
+In particular we remark that the additional reduction in data provided by the
+Time filter for query A5 does not translate in lower processing time (see
+figure~\ref{fig:A5}).
+This happens because the default MainKey filter already drastically reduces
 the amount of data that needs to be processed by the pattern matcher. 
 Therefore the performance gain from further reduction is easily canceled by the
-cost of building the additional filters.
-
+cost of building the additional filter.
+A similar situation occurs in query A3 where the sweet-spot is provided by the
+combination of MainKey and Time predicates, even though the combination of
+Main and Secondary Key filters manages to discard the largest number of events 
+(figure~\ref{fig:A3}).
 
 
 \subsection{Latency speedup}
 
 
-In terms of end-to-end running times we record speedups between 8\% and 78\%
+In terms of end-to-end running times we record speedups between 1.08x and 1.78x
 for 8 out of the 18 queries in our workload, while for 4 of them our
 approach performs within 5\% of the baseline (see Figure~\ref{fig:latency_red}).
 Just like in the case of processing times, the slowdowns in latency mainly
@@ -167,7 +233,6 @@ outside the scope of our current work.
 
 
 
-\subsection{Symbolic state size vs filtering ratio tradeoff}
 
 
 
