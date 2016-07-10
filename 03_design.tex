@@ -3,22 +3,84 @@
 
 We consider queries specified as a symbolic finite automaton where each
 transition is annotated by a variable and a guard.
-The variable is used to bind the fields of the currently considered event while the guard is a propositional formula in disjunctive normal form which decides whether the transition can be triggered or not.  
-The atomic formulas of the guard are either {\em selection} predicates, which only reference the variable associated with the current transition,
-or {\em join} predicates, which may also reference the variables of preceding transitions.
-In particular, the guards of start transitions can only use selection predicates.  
+The variable is used to bind the fields of the currently considered event while 
+the guard is a propositional formula in disjunctive normal form which decides 
+whether the transition can be triggered or not.  
+The atomic formulas of the guard are either {\em selection} predicates, which 
+only reference the variable associated with the current transition,
+or {\em join} predicates, which may also reference the variables of preceding 
+transitions.
+In particular, the guards of start transitions can only use selection 
+predicates.  
    
-Pattern matching algorithms require the input stream of events to be (partially) sorted on time, while this is not always the case in practice due to competing constraints of other stages in the data processing pipeline. 
-Thus, evaluating pattern matching queries in a map-reduce framework usually adds a reduction step in order to sort the input, which can become the main bottleneck of the analysis, both at the network level (large amounts of shuffled data) and at
-the processing level (in case of data-skew).
+Pattern matching algorithms require the input stream of events to be
+(partially) sorted on time, while this is not always the case in practice due
+to competing constraints of other stages in the data processing pipeline. 
+Thus, evaluating pattern matching queries in a map-reduce framework usually 
+adds a reduction step in order to sort the input, which can become the main 
+bottleneck of the analysis, both at the network level (large amounts of 
+shuffled data) and at the processing level (in case of data-skew).
 
- 
+The standard approach to minimize the cost of sorting/data shuffling has been 
+to introduce a {\em preprocessing} phase which first filters the input based on 
+the {\em selection} predicates in the transition guards, i.e.\ removes all 
+events that do not satisfy the guard of at least one transition while ignoring 
+its {\em join} predicates.
+This {\em preprocessing} phase can significantly reduce both processing costs 
+and latency since it takes linear time in the size of the input (as opposed to 
+$O(nlogn)$ for sorting) and is embarrassingly parallel, i.e.\ scales out with 
+the number of computing resources available.
+Moreover, it can be merged with the previous operator in the data processing 
+pipeline thus incurring no extra costs for materialization or data transfer.    
 
-We propose to significantly reduce the amount of data fed into the pattern
-matcher (reducer) by dropping in a map phase all the events that cannot take
-part in a successful match.
-To do so we design a set of filters that while conservative, closely match the
-semantics of the patterns analyzed.
+
+In our work we extend the opportunities for query plan optimizations across all 
+the stages of the workload, beyond just pipelining the preprocessing phase of 
+the pattern matcher, by leveraging the fact that a large class of symbolic 
+finite automata have a corresponding relational calculus expression (possibly 
+with counting quantifiers).
+Whenever that is not the case we can narrow the scope of our optimizations to 
+the sections of the pattern that do.
+The resulting relational expressions can then be optimized within the scope of 
+the entire (predominantly relational) workload based on decades of progress in 
+relational optimizations.  
+We remark that the translation to relational expressions is not limited only to 
+acyclic symbolic automata, but also to automata with cycles of fixed length, 
+i.e.\ each iteration of the cycle has the same number of transitions.
+This class of symbolic automata is of particular importance as it includes the 
+vast majority of patterns found in benchmarks and in industrial workloads.  
+
+
+Even in the scenarios where the relational optimizer decides that using the 
+pattern matcher leads to the most efficient query plan, we can leverage the 
+relational expressions to generate a series of {\em abstract} filters that can 
+dramatically increase the reduction ratio achieved by the preprocessing step by 
+also taking advantage of the filtering power of {\em join} predicates (as 
+opposed to just the {\em selection} predicates).   
+Thus, in many cases we manage to discard most of the events that are guaranteed 
+not to take part in a successful match and significantly reduce the amount of 
+data fed into the pattern matcher.
+
+We start from the relational formulas and produce {\em symbolic} filters for 
+each transition, that retain only those events from the input which trigger 
+that transition and take part in a complete match.
+However in many cases these filters would be too expensive to build and 
+evaluate as such.
+Therefore, we coarsen them to obtain a set of {\em abstract} filters
+that can be constructed and queried in a time and space efficient manner.
+In particular, we make use of both {\em data} abstraction and {\em predicate} 
+abstraction in order to generate filters that, while conservative, closely 
+match the {\em symbolic} filters. 
+We explore the trade-offs between the overheads incurred in building/querying
+the filters and their accuracy. 
+
+
+The derivation of abstract filters is not strictly tied to the ability to 
+generate a semantically equivalent relational expression for a symbolic 
+automaton. By adding the fixpoint construct, we are able to apply similar 
+techniques to generate both the {\em symbolic} and the {\em abstract} 
+filters.
+
 
 \begin{comment}
 We propose three levels of abstraction.
@@ -30,32 +92,15 @@ Finally the last one enforces ordering constraints between {\em consecutive}
 transitions of the pattern.
 \end{comment}
 
-In our approach we leverage the fact that a large class of symbolic finite
-automata fit within the fragment of star-free languages which
-have a corresponding FOL formula (possibly with counting quantifiers).
-Whenever that is not the case we can narrow the scope of our filters to the
-sections of the pattern that do.
- 
-Based on these FOL formulas we produce precise filters, one per transition, 
-that can be evaluated independently on each mapper.
-Finally we further coarsen these filters to a set of relaxed filters
-that can be collected and tested in a time and space efficient manner (for
-example using bloom filters, time-interval maps).
+\subsection{From automata to relational expressions}
 
-We explore the trade-offs between the overheads incurred in building/querying
-the filters and their accuracy. 
-
-
-\subsection{Translating patterns into queries}
-
-We assume as input an automata where each transition $X$ is annotated by a
-predicate $p_X$ that may refer to the fields of the currently considered event,
-as well as the events matched by the preceding transitions within the current
-run.
-To streamline the presentation we begin by considering automatas with only
+We assume as input an automaton where each transition $X$ is annotated by a
+guard $p_X$.
+To streamline the presentation we begin by considering automata with only
 cycles of length 1 and we distinguish between cycle transitions and
 non-cycle transitions.
 
+We formally define a symbolic finite automaton as $\cA = (S, T, )$ 
 
 The translation process produces one query $Q_X$ per non-cycle transition $X$
 and one query $Q_i$ per node $i$, excluding the initial node.
