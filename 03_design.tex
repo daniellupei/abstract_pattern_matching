@@ -1,16 +1,17 @@
 \section{Design}
 
-We consider patterns specified as a symbolic finite automata where each
-transition has a guard (propositional formula) whose predicates test the
-currently considered event against constants as well as events matched by
-preceding transitions.
+We consider queries specified as a symbolic finite automaton where each
+transition is annotated by a variable and a guard.
+The variable is used to bind the fields of the currently considered event while the guard is a propositional formula in disjunctive normal form which decides whether the transition can be triggered or not.  
+The atomic formulas of the guard are either {\em selection} predicates, which only reference the variable associated with the current transition,
+or {\em join} predicates, which may also reference the variables of preceding transitions.
+In particular, the guards of start transitions can only use selection predicates.  
    
-Pattern matching algorithms require data sorted on time.
-In a map-reduce framework this makes the reducer the main bottleneck of the
-analysis, both at the network level (large amounts of shuffled data) and at
+Pattern matching algorithms require the input stream of events to be (partially) sorted on time, while this is not always the case in practice due to competing constraints of other stages in the data processing pipeline. 
+Thus, evaluating pattern matching queries in a map-reduce framework usually adds a reduction step in order to sort the input, which can become the main bottleneck of the analysis, both at the network level (large amounts of shuffled data) and at
 the processing level (in case of data-skew).
 
-
+ 
 
 We propose to significantly reduce the amount of data fed into the pattern
 matcher (reducer) by dropping in a map phase all the events that cannot take
