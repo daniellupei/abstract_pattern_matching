@@ -1,7 +1,48 @@
+
+\begin{figure*}[t!]
+\begin{small}
+\begin{center}
+\setlength\tabcolsep{4pt}
+  \begin{tabular}{l | c c c c c c c c c c c c c c c c c c}
+    \hline
+    Query & 
+    A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9 & A10 & A11 & A12 & A13 & A14 &
+    A15 & G1 & G2 & G3 
+    \\ \hline 
+    No. Of Transitions & 
+    2 & 3 & 3 & 2 & 3 & 2 & 3 & 5 & 6 & 25 & 4 & 5 & 3 & 13 & 18 & 3 & 4 & 2 
+    \\
+    Has Union & 
+     &  &  &  &  &  &  &  & $\checkmark$ & $\checkmark$ &  & $\checkmark$ &  &
+     $\checkmark$ & $\checkmark$ & $\checkmark$ &  &
+    \\
+    Has Kleene Star & 
+     &  &  &  &  &  &  &  & $\checkmark$ & 
+     \begin{tabular}[c]{@{}c@{}}$\checkmark$\\(group)\end{tabular} &
+     $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & 
+     \begin{tabular}[c]{@{}c@{}}$\checkmark$\\(group)\end{tabular} &  &
+     $\checkmark$ &
+    \\
+    Has SecondaryKey & 
+     & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ &  &  & $\checkmark$ &
+     $\checkmark$ & $\checkmark$ &  &  &  & $\checkmark$ &  &  &  & $\checkmark$
+    \\
+    Input Size(GB) & 
+    216 & 321 & 477 & 264 & 1361 & 180 & 148 & 158 & 1167 & 587 & 234 & 1167 &
+    286 & 366 & 141 & 593 & 593 & 85
+    \\
+    \hline
+  \end{tabular}
+\vspace{-10pt}
+\end{center}
+\end{small}
+\caption{Workload characteristics}
+\label{tab:workload}
+\end{figure*}
+
+
+
 \section{Evaluation}
-
-
-
 
 We tested our approach on 2 workloads:
 i) Asimov, consisting of 15 patterns (A1-15) matched over telemetry events
@@ -12,16 +53,30 @@ All transitions in a pattern have a main key constraint, i.e.\ all events in a
 match should belong to the same device for the Asimov workload, or the same
 repository for the GitHub patterns, and a time constraint, i.e.\ all events 
 considered should occur within a timeout from the initial event in the match.
-In addition, some patterns also have a secondary key constraint between some of
+In addition, 9 patterns also have a secondary key constraint between some of
 their transitions.
+The characteristics of our workload are summarized in figure~\ref{tab:workload}.
+The queries that we experiment with have up to 25 transitions and make use of
+both {\em union} and {\em Kleene star}. 
+In particular, queries A10 and A15 apply the Kleene star over a sub-pattern as
+opposed to a single query variable.
+
+
 
 We assess the benefits provided by our approach in terms of 
 the ratio of input events vs selected events, 
 the total execution time across the processing nodes of the cluster,
 and the time it takes to complete the query (latency).
-We also use query A5 to highlight the individual filtering potential
+In measuring the data reduction provided by our abstract filters for a specific
+query we use as baseline only the events from the input stream that satisfy the
+selection predicates of some transition in the query. 
+This way we can evaluate our approach in isolation from the standard technique
+of pushing selection predicates into the scan operator of a query. 
+The resulting amount of data to be processed by each query is detailed in
+figure~\ref{tab:workload}.
+Finally, we use query A5 to highlight the individual filtering potential
 of different join predicates, as well as their sensitivity wrt.\ the amount of
-state dedicated to their symbolic representation.
+state dedicated to their abstract representation.
 
 \begin{figure}[t!]
 \centering

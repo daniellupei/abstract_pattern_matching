@@ -2,8 +2,8 @@
 
 We consider patterns specified as a symbolic finite automata where each
 transition has a guard (propositional formula) whose predicates test the
-currently considered event against constants as well as events matched by
-preceding transitions.
+currently considered event against constants (selection predicates) as well as
+events matched by preceding transitions (join predicates).
    
 Pattern matching algorithms require data sorted on time.
 In a map-reduce framework this makes the reducer the main bottleneck of the
@@ -146,7 +146,7 @@ Considering that initial or final transitions typically have the fewest
 number of matching events, one might choose to generate filters that only
 consider the join predicates with respect to those transitions.
 Due to the low cardinality of the sets of events matching these transitions 
-the join predicates involving them are likely to have very high selectivity.
+the join predicates referencing them are likely to have very high selectivity.
 Moreover, the data abstractions used to enforce them can achieve higher
 precision for the same operating costs.
 
