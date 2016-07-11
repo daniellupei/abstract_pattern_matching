@@ -94,55 +94,124 @@ transitions of the pattern.
 
 \subsection{From automata to relational expressions}
 
-We assume as input an automaton where each transition $X$ is annotated by a
-guard $p_X$.
+We assume that patterns are specified in terms of symbolic finite automata and
+we formally define a symbolic finite automaton as $\cA = (S, T, s_{start}, C),$ 
+where $S$ is the set of states, $T$ is the set of transitions, $s_{start}$ is 
+the initial state and $C$ is the set of completion (accepting) states.
+Each transition is defined in terms of the tuple $(X, p_X, src, dst)$ where $X$ 
+is the variable binding the event considered for that transition, $p_X$ is the 
+guard deciding whether the transition is triggered or not, and $src$ and $dst$ 
+are the transition's source and destination states.
+
+{\bf Notation.}
+We usually denote states by indices $i, j, k,$, and we abuse notation to refer 
+to transitions using the variable name they introduce (eg. $X, Y, Z$).
+In addition we refer to states and transitions also as nodes and edges, 
+respectively, in the corresponding graph of an automaton.
+
 To streamline the presentation we begin by considering automata with only
 cycles of length 1 and we distinguish between cycle transitions and
 non-cycle transitions.
 
-We formally define a symbolic finite automaton as $\cA = (S, T, )$ 
 
-The translation process produces one query $Q_X$ per non-cycle transition $X$
-and one query $Q_i$ per node $i$, excluding the initial node.
-The transition queries $Q_X$ compute partial matches corresponding to the paths
-ending with transition $X$.
-Analogously, the node queries $Q_i$ produce partial matches corresponding to the
-paths between the starting node and node $i$.
-If a node $i$ is an accepting node then its query will return complete matches,
-thus the final query of the automata is obtained by unioning all the queries
-generated for the automata's accepting nodes.
+The translation process produces one relational query $Q_i$ per state $i$, and 
+the final relational expression of the automata is obtained by unioning all the 
+queries generated for the automata's accepting nodes.
+Evaluating query $Q_i$ over a set of events computes partial matches, i.e.\ 
+sequences of events, corresponding to all the possible paths between the 
+starting node and node $i$.
+Therefore, if $i$ is the starting node then its query returns an empty sequence 
+while if $i$ is an accepting node then it returns complete matches found in the 
+input stream of events.
+Moreover, the partial (complete) matches computed by $Q_i$ do not include the 
+events matched against cycle transitions therefore have a bounded length. 
+
+The schema of the queries we generate consist of a sequence of event variables, 
+one for each non-cycle transition that may occur along its associated set of 
+paths. 
+If a transition is triggered within a partial match, then its corresponding 
+variable is initialized by the event that triggered it, otherwise that variable 
+is assigned null.
 
 
-The schema of these queries consists of a group of fields for each non-cycle
-transition that may occur along its associated set of paths. If a transition is
-triggered within a partial match then its corresponding group of fields records
-the timestamp of the event that triggered it along with any other event
-attributes that may be referenced by the predicates of succeeding transitions.
-On the other hand, if a transition is not triggered in a particular partial
-match then its group of fields is left void.
+State queries $Q_i$ are defined as the union of transition queries $Q_X$ over 
+all the incoming non-cycle transitions into state $i$, where each transition 
+query $Q_X$ computes partial matches corresponding to the paths ending with 
+transition $X$.
+In turn, the $Q_X$ query corresponding to a non-cycle transition is defined as 
+the join between node query $Q_k$ and the input relation of events, where $k$ 
+is the source of the transition and each event considered is bound by event 
+variable $X$.
+The condition enforced by $Q_X$ consists of the guard $p_X$ along with the 
+constraint that the timestamp of $X$ succeeds the last event in the partial 
+match produced by $Q_k$.
+Additionally, a nested query ensures that no other events 
+exist between the last event matched by $Q_k$ and the event bound by $X$, 
+except for events matching cycle transitions starting and ending in $k$.
 
 
 The translation process iterates in topological order over the nodes of the DAG
-obtained by ignoring the cycle transitions of the automata.
+obtained by ignoring the cycle transitions of the automaton.
 At each node $i$, it first generates the queries for all its incoming
 non-cycle transitions $Q_X$ and then $Q_i$ is defined as their union. 
-The schema of $Q_i$ is established as the
-union of the schemas of the incoming transitions $Q_X$, and the necessary tuple
-mapping from the schema of $Q_X$ to the schema of $Q_i$ is also undergone.
-
-The query for non-cycle transition $X$ with source node $k$ is generated as a
-join between the partial matches produced by query $Q_k$ and the input
-relation of events.
-The possible event matches $e_X$ for transition $X$ are constrained based on the
-transition's predicate $p_X$, and $e_X$'s timestamp which should be greater than
-that of the latest event $e_k$ from the partial match computed by $Q_k$.
-In addition, an inner query specifies that no other event should occur between
-$e_k$ and $e_X$, apart from those matching a cycle transition on node $k$, if
-such a transition should exist.
+The schema of $Q_i$ is established as the union of the schemas of the incoming 
+transitions $Q_X$.
 
 
+In order to perform this translation for all automata whose cycles have a fixed 
+length ($\geq 1$), we first normalize them such that each cycle starts and ends 
+with the same state.
+More formally, the cycles of a normalized automata have a single incoming edge 
+and a single outgoing edge and both of them enter and exit, respectively, the 
+same node.
+We remark, that cycles of fixed length cannot have transversal edges (paths), 
+i.e.\ edges (paths) that connect non-adjacent nodes, as this would violate the 
+restriction that each iteration of the cycle has the same length.
 
-\subsection{Precise filter generation}
+Given an automaton with a cycle that has multiple incoming and outgoing edges 
+we first duplicate the cycle for each additional incoming edge. 
+Then we duplicate the path between the starting and ending nodes of the cycle, 
+where starting node of a cycle is defined as the destination of its incoming 
+edge while the ending node is the source of the last of its outgoing edges. 
+Finally, we change the source of each outgoing edge to be the corresponding 
+node in the newly created path, resulting in a cycle whose incoming and 
+outgoing edges have the same node as destination and source, respectively.
+By applying this procedure to every cycle with multiple incoming and outgoing 
+edges we obtain a normalized automaton.  
+We remark that, while the resulting automaton may have multiple cycles starting 
+and ending with the same node, all of those must also have the same length.
+
+
+The only part of the translation process that changes when generalizing from 
+automata with single edge cycles to normalized automata is the specification of 
+transition queries $Q_X$, and in particular, the specification of its nested 
+query should the source state of $X$ be the starting/ending point of a cycle.
+We recall that in the case of cycles with a single transition $Y$ the nested 
+query enforces that all events occurring in the interval between the last event 
+in the partial match computed by $Q_k$ and the timestamp of event variable $X$ 
+satisfy guard $p_Y$. 
+By contrast, in the case of multi-edge fixed length cycles, for each event in 
+the same interval we establish its position (based on  the count of events with 
+smaller timestamps) and we ask that it satisfies the guard of the transition 
+corresponding to that position in the cycle modulo the length of the cycle.
+If multiple cycles initiate and conclude at the same node, we alternatively 
+have to enforce that all events in an iteration satisfy the corresponding 
+transition guards of a particular cycle.
+
+
+After translating patterns into relational queries a host of relational 
+optimizations become applicable, from column pruning and partial aggregation to
+the selection of specific join algorithms.
+In the following we detail our proposal for speeding up pattern matching in a 
+distributed environment based on its representation in the relational world as 
+a series of unions and joins.
+More specifically, we use this representation to design {abstract} filters 
+meant to discard from the input almost all the events that do not participate 
+in a complete match. 
+
+
+
+\subsection{Symbolic filter generation}
 \label{sec:prec_filter_generation}
 
 Based on the automata query $Q$ derived in the previous section we can generate
