@@ -199,38 +199,50 @@ have to enforce that all events in an iteration satisfy the corresponding
 transition guards of a particular cycle.
 
 
+\subsection{Symbolic filter generation}
+\label{sec:prec_filter_generation}
+
+
+
 After translating patterns into relational queries a host of relational 
 optimizations become applicable, from column pruning and partial aggregation to
 the selection of specific join algorithms.
 In the following we detail our proposal for speeding up pattern matching in a 
 distributed environment based on its representation in the relational world as 
 a series of unions and joins.
-More specifically, we use this representation to design {abstract} filters 
-meant to discard from the input almost all the events that do not participate 
-in a complete match. 
+More specifically, we use this representation to design filters meant to 
+discard from the input (almost) all the events that do not participate in a 
+complete match. 
 
+The first step in this process is to generate for each transition of the 
+automaton a {\em symbolic} filter.
+These filters are precise in the sense that they retain only the events  
+guaranteed to appear in a successful match.
+While it is understood that constructing and applying such filters is 
+prohibitively expensive, we discuss them nonetheless as they are essential in 
+guiding the design of their time and space efficient variants, the 
+{\em abstract} filters. 
 
-
-\subsection{Symbolic filter generation}
-\label{sec:prec_filter_generation}
-
-Based on the automata query $Q$ derived in the previous section we can generate
-a set of precise filters, one per transition, such that if an event does not match
-any of them, it is guaranteed not to contribute to any complete match.
-
-The precise filter corresponding to a non-cycle transition $X$ is obtained from
-$Q$ by projecting away (i.e.\ existentially quantifying) all the other transitions
-from the complete match returned by $Q$.
+Given an automaton $\cA$ for which we can derive a semantically equivalent  
+relational query $Q_{\cA}$, the symbolic filter $F_X$ corresponding to one of 
+its non-cycle transition $X$ is extensionally defined in terms of the events 
+from the input that bind the event variable $X$ in the output of $Q_{\cA}$. 
+Therefore $F_X$ can be obtained from $Q_{\cA}$ by projecting away (i.e.\ 
+existentially quantifying) all the other event variables in its output besides 
+$X$.
 
 For cycle transitions $Y$ on a node $k$ we define its precise filter as a
 conjunction between 
 a) the associated predicate $p_Y$ while existentially quantifying its join
-attributes over the fields stored in the complete matches returned by $Q$, and
-b) the time constraint specifying they should only occur between events matching
-an incoming and an outgoing transition of $k$ within a complete match produced
+attributes over the fields stored in the complete matches returned by $Q$,
+ and
+b) the time constraint specifying they should only occur between events
+ matching
+an incoming and an outgoing transition of $k$ within a complete match
+ produced
 by $Q$.
 
-\subsection{Symbolic filters via data abstraction}
+\subsection{Data abstraction}
 \label{sec:data_abstraction}
 
 
@@ -238,13 +250,18 @@ by $Q$.
 \label{sec:pred_abstraction}
 
 
-We propose {\em predicate abstraction}, ie.\ the technique of strengthening the
-precise filters by discarding some of their predicates, as a way of overcoming
-the challenges that can arise when turning precise filters into symbolic filters
+We propose {\em predicate abstraction}, ie.\ the technique of strengthening
+ the
+precise filters by discarding some of their predicates, as a way of
+ overcoming
+the challenges that can arise when turning precise filters into symbolic 
+filters
 via data abstraction.
 For example, it may happen that for some predicate types
-(for eg.\ $x.Contains(y)$, where $x$, $y$ are strings) we simply cannot provide
-any data abstraction, and even for those that we can, materializing and querying
+(for eg.\ $x.Contains(y)$, where $x$, $y$ are strings) we simply cannot
+ provide
+any data abstraction, and even for those that we can, materializing and
+ querying
 those data abstractions might prove too expensive.
 
 Predicate abstraction is an essential component of our approach
@@ -252,9 +269,11 @@ allowing us to strike the right balance between the data reduction that the
 symbolic filters provide on one hand, and the overheads introduced by their
 data abstractions on the other.
 For instance, we may choose to discard
-predicates that have very low selectivity, i.e.\ the reduction in input data
+predicates that have very low selectivity, i.e.\ the reduction in input 
+data
 that they provide does not justify the cost of enforcing them.
-Similarly, one may turn to predicate abstraction when dealing with patterns with
+Similarly, one may turn to predicate abstraction when dealing with patterns
+ with
 a large number of join predicates or transitions, in order to mitigate the
 increased overheads incurred by their data abstractions.
 
@@ -262,7 +281,8 @@ Considering that initial or final transitions typically have the fewest
 number of matching events, one might choose to generate filters that only
 consider the join predicates with respect to those transitions.
 Due to the low cardinality of the sets of events matching these transitions 
-the join predicates referencing them are likely to have very high selectivity.
+the join predicates referencing them are likely to have very high 
+selectivity.
 Moreover, the data abstractions used to enforce them can achieve higher
 precision for the same operating costs.
 
