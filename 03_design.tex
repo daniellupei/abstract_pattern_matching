@@ -210,9 +210,13 @@ the selection of specific join algorithms.
 In the following we detail our proposal for speeding up pattern matching in a 
 distributed environment based on its representation in the relational world as 
 a series of unions and joins.
-More specifically, we use this representation to design filters meant to 
-discard from the input (almost) all the events that do not participate in a 
-complete match. 
+More specifically, even though this representation may prove too expensive to 
+evaluate directly, one can still use it to design filters meant to discard from 
+the input (almost) all the events that do not participate in a complete match 
+and thus vastly reduce the number of events ultimately processed by the pattern 
+matching engine.
+ 
+
 
 The first step in this process is to generate for each transition of the 
 automaton a {\em symbolic} filter.
@@ -220,8 +224,14 @@ These filters are precise in the sense that they retain only the events
 guaranteed to appear in a successful match.
 While it is understood that constructing and applying such filters is 
 prohibitively expensive, we discuss them nonetheless as they are essential in 
-guiding the design of their time and space efficient variants, the 
-{\em abstract} filters. 
+guiding the design of {\em abstract} filters, their time and space efficient 
+variants. 
+In current work we derive such filters only for non-cycle transitions and 
+single-edge cycles since the filters for transitions in multi-edge cycles 
+are impractical to build/apply and abstract over, as they require the position 
+of the considered event within a particular time interval.
+
+
 
 Given an automaton $\cA$ for which we can derive a semantically equivalent  
 relational query $Q_{\cA}$, the symbolic filter $F_X$ corresponding to one of 
@@ -231,16 +241,29 @@ Therefore $F_X$ can be obtained from $Q_{\cA}$ by projecting away (i.e.\
 existentially quantifying) all the other event variables in its output besides 
 $X$.
 
-For cycle transitions $Y$ on a node $k$ we define its precise filter as a
-conjunction between 
-a) the associated predicate $p_Y$ while existentially quantifying its join
-attributes over the fields stored in the complete matches returned by $Q$,
- and
-b) the time constraint specifying they should only occur between events
- matching
-an incoming and an outgoing transition of $k$ within a complete match
- produced
-by $Q$.
+The symbolic filter $F_Y$ of a cycle transition $Y$, with node $k$ as source 
+and destination, selects from the input those events that occur within interval 
+$(t_Z, t_W)$, where $t_Z, t_W$, are the timestamps of a pair of event variables 
+$Z, W$, from the output of $Q_{\cA}$ such that $Z, W$ are associated to 
+non-cycle transitions entering and respectively exiting $k$.
+In addition, $F_Y$ also enforces the guard $p_Y$ with its join predicates 
+ignored, as they are guaranteed to be satisfied based on the fact that the 
+nested query generated as part of the definition of $Q_W$ (and which includes 
+$p_Y$) was found to hold during the evaluation of $Q_{\cA}$.
+ 
+The two kinds of transitions (cycle vs non-cycle) generate distinctly different 
+kinds of symbolic filters. 
+While both make use of the relational query $Q_{\cA}$ generated for the 
+automaton, only the filter for cycle transitions makes direct use of its results
+while the other simply uses $Q_{\cA}$'s expression as a starting point for its 
+definition.
+This distinction plays an important role in how we go about building these 
+filters in a distributed environment.
+
+
+% express symbolic filters as sets, construct them using set operations union 
+% and intersection, and query them based on set membership and emptiness 
+%testing.   
 
 \subsection{Data abstraction}
 \label{sec:data_abstraction}
