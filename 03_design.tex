@@ -290,41 +290,42 @@ Finally, the join predicates get re-written in terms of slicing, intersection
 and emptiness testing over these sets.
 
 
-We remark that the symbolic filters are not strictly tied to the ability to 
-express automata as relational queries, but that they can also be obtained for 
-an arbitrary automaton by using a fixpoint operator that keeps track of 
-provenance information.
-The fixpoint operator we consider assigns to the starting node the empty 
-sequence and then iteratively builds for every node of the automaton its 
-corresponding set of (partial) matches, until no more new matches are found. 
-In every iteration, for each node $i$ and each of its outgoing transitions $X$, 
-the partial matches added by the previous round to $i$ get extended if matching 
-events are found within the symbolic set of $X$. 
-The newly found matches then get added to the collection of matches 
-corresponding to $X$'s destination, and the process starts over.  
-Since we never remove partial matches we are guaranteed to reach a fixpoint.
-Whenever we add a new match to an accepting node, we also update the symbolic 
-filters of the transitions along the path followed by that match.
-
-In designing the fixpoint operator we similarly make extensive use of sets and 
-set operators.
-In particular, the (partial) matches we compute for each node $i$ of the 
-automaton are represented as a series of sets, one for each transition that may 
-occur on a path from the start node to $i$.
-Then the symbolic filter for a specific transition can be obtained by unioning 
-its corresponding set across all the accepting nodes.
-When deciding whether a partial match can be extended by triggering transition 
-$X$ we simply intersect the symbolic set of $X$ with the projection from the 
-partial match of all its fields that are joined in the guard of $X$.
-If the result is empty then the extension is not possible otherwise, a new 
-partial match gets created whose corresponding set for transition $X$ is the 
-result of the intersection.   
-
 \subsection{Data abstraction}
 \label{sec:data_abstraction}
 
 
-In the following we discuss 
+Building the symbolic filters as described in the previous section is not a 
+feasible option, as it would require at least just as much work as computing 
+the final result.
+Nonetheless, the symbolic filters provide an excellent template for designing 
+appropriate set abstractions that can provide the set operations required for 
+their constructing and querying them in a time and space efficient manner. 
+Our approach is to use set abstractions that sacrifice precision, while 
+remaining conservative, as we should never eliminate events that would 
+otherwise have contributed to a successful match.
+We call the resulting structures {\em abstract} filters as they are the outcome 
+of employing several abstractions during the process outlined for deriving the 
+symbolic filters.  
+
+
+First of all, we remark that the sets we abstract over contain tuples as 
+opposed to single values, where each tuple field holds the values relevant to a 
+particular join predicate. 
+Similarly, the abstractions we chose need to be multidimensional in the sense 
+that they must allow the testing of the domain of values corresponding to a 
+specific join predicate, independent of the others.  
+Second, we note that besides supporting set intersection and set union, the 
+choice for a particular set abstraction is deeply influenced by the particular 
+kind of predicates said abstractions needs to support.
+For example, in the case of equality joins an appropriate data abstraction 
+would be to use bloom filters as they provide a low cost solution for testing 
+whether o value belongs to a set, with the guarantee of no false negatives.
+For enforcing inequality joins on the other hand, an interval map, i.e.\ a 
+bitvector where each bit stands for a particular interval in the domain,
+provides a similarly low cost abstraction.  
+
+
+
 
 \subsection{Predicate abstraction}
 \label{sec:pred_abstraction}
@@ -332,11 +333,10 @@ In the following we discuss
 
 We propose {\em predicate abstraction}, ie.\ the technique of strengthening
  the
-precise filters by discarding some of their predicates, as a way of
+symbolic filters by discarding some of their predicates, as a way of
  overcoming
-the challenges that can arise when turning precise filters into symbolic 
-filters
-via data abstraction.
+the challenges that can arise when turning symbolic filters into abstract 
+filters.
 For example, it may happen that for some predicate types
 (for eg.\ $x.Contains(y)$, where $x$, $y$ are strings) we simply cannot
  provide
@@ -369,9 +369,38 @@ precision for the same operating costs.
 
 
 
+\subsection{Building filters through fixpoint}
 
 
+We remark that the symbolic filters are not strictly tied to the ability to 
+express automata as relational queries, but that they can also be obtained for 
+an arbitrary automaton by using a fixpoint operator that keeps track of 
+provenance information.
+The fixpoint operator we consider assigns to the starting node the empty 
+sequence and then iteratively builds for every node of the automaton its 
+corresponding set of (partial) matches, until no more new matches are found. 
+In every iteration, for each node $i$ and each of its outgoing transitions $X$, 
+the partial matches added by the previous round to $i$ get extended if matching 
+events are found within the symbolic set of $X$. 
+The newly found matches then get added to the collection of matches 
+corresponding to $X$'s destination, and the process starts over.  
+Since we never remove partial matches we are guaranteed to reach a fixpoint.
+Whenever we add a new match to an accepting node, we also update the symbolic 
+filters of the transitions along the path followed by that match.
 
+In designing the fixpoint operator we similarly make extensive use of sets and 
+set operators.
+In particular, the (partial) matches we compute for each node $i$ of the 
+automaton are represented as a series of sets, one for each transition that may 
+occur on a path from the start node to $i$.
+Then the symbolic filter for a specific transition can be obtained by unioning 
+its corresponding set across all the accepting nodes.
+When deciding whether a partial match can be extended by triggering transition 
+$X$ we simply intersect the symbolic set of $X$ with the projection from the 
+partial match of all its fields that are joined in the guard of $X$.
+If the result is empty then the extension is not possible, otherwise a new 
+partial match gets created whose corresponding set for transition $X$ is the 
+result of the intersection.   
 
 
 
