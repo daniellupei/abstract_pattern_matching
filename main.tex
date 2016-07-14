@@ -4,6 +4,7 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{url}
 
 \begin{document}
 
@@ -54,7 +55,7 @@ Todd Mytkowicz\\
 Event-series pattern matching is a major component of data analytics pipelines
 enabling a wide range of system diagnostics tasks (from tracing network
 bottlenecks to detecting security breaches). Existing pattern-matching engines
-(e.g., Oracle's match recognize) expect their data to be sorted on time which is
+expect their data to be sorted on time which is
 not the case in many practical scenarios where the physical layout of the data
 has to meet wider system requirements. This in turn leads to an expensive
 ``shuffle the world'' stage wherein data are sorted and shuffled across the
@@ -90,7 +91,7 @@ processing time and 18\% average reduction in end-to-end latency.
 \input{06_conclusions}
 
 
-
+\small
 \bibliographystyle{abbrv}
 \bibliography{main}
 
