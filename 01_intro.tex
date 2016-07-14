@@ -9,6 +9,22 @@ trading, security breach detection.
 (Challenges)
 Warehoused data is being analyzed by a wide range of queries thus it
 may not be clustered/sorted on time. 
+For example, along with pattern matching queries, one might want to answer also 
+queries like in which city are located most of the last month's website 
+visitors. 
+These queries have very different optimum data layout, and as the latter kind 
+are usually much more frequent, their optimum data layout ends up becoming the 
+layout of choice in the data center.
+Keeping a second copy of the data sorted on time is wasteful in terms of space, 
+especially in the light of the fact many of the recorded events are not 
+referenced by patterns. 
+That is why, before sorting the data and feeding it to a pattern matching 
+engine, an extra preprocessing step is used to discard all the events that do 
+not satisfy any of the selection predicates of the pattern.     
+
+We also note that the input data is not necessarily sorted on time in the first 
+place either, as it may be collected from a wide array of sources, with varying 
+constraints for when the data ingestion should happen. 
 
 Analytics are being run both over fresh data as well as historical data,
 therefore the data management system needs to support both online and
@@ -18,6 +34,13 @@ batching mode processing.
 (Approach)
 We design a set of relational-style optimizations for event-series pattern
 matching workloads.
+
+Relation to abstract interpretation, i.e.\ how abstract filters relax the 
+precise constraints enforced by the pattern regarding which events form 
+successful matches. 
+The relaxation/coarsening is done in a conservative manner, with the guarantee 
+that the abstract filter only discards events that would otherwise not take 
+part in a complete match. 
 
 (Results)
 We provide X reduction in shuffled data and Y reduction in end-to-end latency
