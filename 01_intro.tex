@@ -1,49 +1,72 @@
 \section{Introduction}
 
+%(Motivation)
 
 Event-series pattern matching has become essential to many data processing tasks
-as it enables sophisticated 
-behavioral/\allowbreak anomaly/\allowbreak causality analyses, in 
-varied domains ranging from network diagnostics and security breach detection, 
-to algorithmic trading or click path optimization.
+as it enables complex 
+behavioral\allowbreak /\allowbreak anomaly\allowbreak /\allowbreak causality 
+analyses, in varied domains ranging from network diagnostics and security 
+breach detection, to algorithmic trading or click-path optimization.
 This trend prompted the addition of pattern matching constructs to many 
-querying and stream processing engines such as the 
-Event Processing Language (EPL), 
+querying and stream processing engines such as 
+Esper's Event Processing Language (EPL)~\cite{esper_epl}, 
 Oracle's \texttt{MATCH\_RECOGNIZE}~\cite{oracle_mr}, 
-TerraData's \texttt{npath} operator or 
-Splunk's Search Processing Language.
+TerraData's \texttt{nPath} operator~\cite{aster_npath} or 
+Splunk's Search Processing Language~\cite{Carasso:2012}.
 
 
+%(Challenges)
 
+Pattern matching is usually only one of many stages in a data processing 
+pipeline. As most of these stages are expressed in terms of relational queries, 
+the presence of pattern matching operators raises considerable challenges in 
+terms of deriving optimum execution plans. 
+This happens because pattern matching operators have on one hand rather strict 
+requirements for their input (i.e.\ it should be sorted on time), and on the 
+other hand they do not enjoy the same wealth of rewriting rules as relational 
+operators do.  
 
-(Challenges)
-Warehoused data is being analyzed by a wide range of queries thus it
-may not be clustered/sorted on time. 
+In particular,
+one has to take into consideration the fact that
+warehoused data is typically processed by varied workloads.
 For example, along with pattern matching queries, one might want to answer also 
 queries like in which city are located most of the last month's website 
 visitors. 
 These queries have very different optimum data layout, and as the latter kind 
 are usually much more frequent, their optimum data layout ends up becoming the 
 layout of choice in the data center.
-Keeping a second copy of the data sorted on time is wasteful in terms of space, 
-especially in the light of the fact many of the recorded events are not 
-referenced by patterns. 
+Keeping a second copy of the data sorted on time is wasteful when dealing with 
+terabytes of data, 
+especially in the light of the fact many of the recorded events may not be even 
+targeted by patterns. 
 That is why, before sorting the data and feeding it to a pattern matching 
-engine, an extra preprocessing step is used to discard all the events that do 
-not satisfy any of the selection predicates of the pattern.     
-
+engine, an extra preprocessing step is commonly used to discard all the events 
+that do not satisfy any of the selection predicates of the pattern.     
 We also note that the input data is not necessarily sorted on time in the first 
 place either, as it may be collected from a wide array of sources, with varying 
 constraints for when the data ingestion should happen. 
+Finally, we remark that the requirement that the input be ordered by time is 
+especially taxing when executing on a map-reduce platform, as the sorting step 
+incurs an expensive reshuffling of the entire data. 
 
+
+\begin{comment}
 Analytics are being run both over fresh data as well as historical data,
 therefore the data management system needs to support both online and
 batching mode processing.
+\end{comment}
 
+%(Approach)
+In this work we address both challenges by exploiting the fact that a large 
+class of patterns can be equivalently expressed as relational queries.
+This opens the door for the relational query plan optimizers to also include 
+the pattern matching stages of a data processing pipeline when searching for 
+the cheapest execution plan.
+Moreover, it adds optimization opportunities that would otherwise have been 
+missed due to the fact that for the most part the  pattern matching operator is 
+treated as a black-box.
 
-(Approach)
-We design a set of relational-style optimizations for event-series pattern
-matching workloads.
+describe the abstract filter.
 
 Relation to abstract interpretation, i.e.\ how abstract filters relax the 
 precise constraints enforced by the pattern regarding which events form 
@@ -57,8 +80,7 @@ We provide X reduction in shuffled data and Y reduction in end-to-end latency
 for 3 workloads:
 i) telemetry analysis over the events produced by the Windows event-reporting
 infrastructure
-ii) Github queries
-iii) stock market algorithmic trading.
+ii) Github queries.
 
 
 
