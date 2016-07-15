@@ -59,28 +59,80 @@ batching mode processing.
 %(Approach)
 In this work we address both challenges by exploiting the fact that a large 
 class of patterns can be equivalently expressed as relational queries.
-This opens the door for the relational query plan optimizers to also include 
+This opens the door for relational optimizers to operate also through 
 the pattern matching stages of a data processing pipeline when searching for 
 the cheapest execution plan.
 Moreover, it adds optimization opportunities that would otherwise have been 
 missed due to the fact that for the most part the  pattern matching operator is 
 treated as a black-box.
 
-describe the abstract filter.
 
-Relation to abstract interpretation, i.e.\ how abstract filters relax the 
+
+In addition we propose the technique of {\em abstract pattern matching} as a 
+way of discarding from the input those events that cannot participate in any 
+successful match. This technique is prompted by the fact that usually only a 
+tiny fraction of the input matches a given pattern and as such is meant to 
+alleviate the overhead incurred due to the sorting/shuffling of the data prior 
+to being processed by a pattern matching engine.
+It is especially important for those patterns that we cannot 
+translate into relational expressions or whose translation produces queries 
+that are deemed more expensive to evaluate than the standard pattern matching 
+operator. 
+The latter is more likely to happen for complex patterns considering that the 
+translation introduces a join and a nested query for each variable in the 
+pattern. 
+
+While it is standard practice to preprocess the input by filtering out those 
+events that do not match any of the selection predicates of a pattern (i.e.\ 
+those predicates testing an event variable against a constant), the idea behind 
+{\em abstract pattern matching} is to also leverage the filtering power of join 
+predicates.
+We do so by first collecting a set of constraints for each event variable in a 
+pattern, and then we propagate/reconcile these constraints via a fixpoint 
+computation which enforces the join predicates between different event 
+variables as well as the structure of the pattern. 
+Finally, we select from the input only those events that satisfy the resulting 
+set of constraints, which we refer to as the {\em abstract filter}.  
+
+As the collected constraints in their concrete representation would in many 
+cases be just as large as the input, we propose {\em data and predicate 
+abstractions} to compute and query them in a time and space efficient manner. 
+Depending on the type of join constraints that we have to propagate for a 
+particular event variable, data abstraction introduces appropriate abstract set 
+representations that can conservatively approximate those constraints. 
+For example, for equijoins we make use of bloomfilters, whereas for band joins 
+we rely on interval maps.
+In addition, predicate abstraction further reduces the overheads of 
+our approach by dropping in a sound way some of the constraints specified by 
+the pattern. 
+This allows us to cope with join predicates that do not have efficient data 
+abstractions, as well as fine-tune our solution such that it only considers the 
+most selective join predicates.
+      
+ 
+Our approach is inspired by the concept abstract interpretation.
+In particular, the constraints that we capture as part of the {\em abstract 
+filter} are the result of relaxing/coarsening in a conservative manner of the 
 precise constraints enforced by the pattern regarding which events form 
 successful matches. 
-The relaxation/coarsening is done in a conservative manner, with the guarantee 
-that the abstract filter only discards events that would otherwise not take 
-part in a complete match. 
+We argue that one can leverage the technique of abstract interpretation to 
+optimize other user defined operators as well, i.e.\ to derive abstract filters 
+meant to remove from the input those tuples that are guaranteed no to 
+contribute to an output of interest.
 
-(Results)
-We provide X reduction in shuffled data and Y reduction in end-to-end latency
-for 3 workloads:
-i) telemetry analysis over the events produced by the Windows event-reporting
-infrastructure
-ii) Github queries.
+
+%(Results)
+As previously mentioned, constructing and applying the abstract filter incurs a 
+series of overheads, most notably it requires a second pass over the data.
+Nonetheless, if the reduction in data is significant, these additional costs 
+are balanced out by the dramatic speedup in the sorting/shuffling/pattern 
+matching phases which results in an overall decrease in both processing costs 
+and latency.  
+Our experimental evaluation shows up to 3 orders of magnitude reduction in 
+shuffled data as well as 18\% reduction in end-to-end latency for 2 workloads:
+i) telemetry analysis over the events produced by an event-reporting 
+infrastructure, and
+ii) repository analysis over the dataset of events published by GitHub.
 
 
 

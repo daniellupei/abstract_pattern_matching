@@ -12,7 +12,7 @@
 
 
 % Copyright
-\setcopyright{acmcopyright}
+%\setcopyright{acmcopyright}
 %\setcopyright{acmlicensed}
 %\setcopyright{rightsretained}
 %\setcopyright{usgov}
@@ -67,18 +67,20 @@ To solve this problem, we adapt ideas from symbolic execution and abstract
 interpretation to filter data guaranteed not to match any pattern.  In
 particular, we demonstrate how to view an expressive class of regular-expression
 like patterns as relational calculus expressions.  On such a representation, we
-then introduce the idea of symbolic pattern matching, a linear time
-pre-processing step which filters out events from the input guaranteed not to
-match the pattern.  Symbolic pattern matching relies on abstract domains to
+then introduce the technique of {\em abstract pattern matching}, a linear time
+preprocessing step which filters out events from the input guaranteed not to
+match the pattern.  Abstract pattern matching relies on abstract domains to
 first collect a set of conservative constraints for every transition of the
-pattern based on the events from the input that may match it. It then uses these
-transition constraints to perform a fixpoint computation over the state machine
-representation of the pattern, during which it eliminates transition constraints
-that cannot form a complete path, i.e., a path to a final state. Finally, the
-original stream of events is filtered based on the resulting set of constraints.
+pattern based on the events from the input that may match it. 
+It then uses these transition constraints to perform a fixpoint computation 
+over the finite state machine representation of the pattern, during which it 
+refines the transition constraints such that the events that cannot form a 
+complete path, i.e., a path to a final state., are excluded.  
+Finally, the original stream of events is filtered based on the resulting set 
+of constraints.
 
-We implemented and applied Symbolic pattern matching in SCOPE to an industrial
-benchmark (subset of Asimov telemetry queries) where we obtained up to 3 orders
+We implemented and applied {\em abstract pattern matching} in COSMOS/Scope to 
+an industrial benchmark where we obtained up to 3 orders
 of magnitude reduction in shuffled data, 26\% average reduction in total
 processing time and 18\% average reduction in end-to-end latency.
 \end{abstract}
