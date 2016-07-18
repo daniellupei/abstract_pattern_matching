@@ -52,37 +52,39 @@ Todd Mytkowicz\\
 
 \maketitle
 \begin{abstract}
-Event-series pattern matching is a major component of data analytics pipelines
-enabling a wide range of system diagnostics tasks (from tracing network
-bottlenecks to detecting security breaches). Existing pattern-matching engines
-expect their data to be sorted on time which is
-not the case in many practical scenarios where the physical layout of the data
-has to meet wider system requirements. This in turn leads to an expensive
-``shuffle the world'' stage wherein data are sorted and shuffled across the
-network.  Unfortunately, existing systems treat the pattern matching engine as a
-black box which prevents these systems from optimizing the entire data analytics
-pipeline (and in particular, this costly shuffle).
+Event-series pattern matching is a major component of large-scale data 
+analytics pipelines enabling a wide range of system diagnostics tasks.
+% (from tracing network bottlenecks to detecting security breaches). 
+While existing solutions focus on the online scenario and expect 
+their data to be (mostly) sorted on time, this is not the case in many 
+situations where batch processing is preferable due to the large volume of data 
+and where the physical layout has to meet wider system requirements. 
+On map-reduce frameworks the consequence is an expensive ``shuffle the world'' 
+stage wherein data are sorted and shuffled across the network.  
+Moreover, existing systems treat the pattern matching engine as a black box 
+which prevents them from optimizing the entire data analytics pipeline (and in 
+particular, this costly shuffle).
 
-To solve this problem, we adapt ideas from symbolic execution and abstract
-interpretation to filter data guaranteed not to match any pattern.  In
-particular, we demonstrate how to view an expressive class of regular-expression
-like patterns as relational calculus expressions.  On such a representation, we
-then introduce the technique of {\em abstract pattern matching}, a linear time
-preprocessing step which filters out events from the input guaranteed not to
-match the pattern.  Abstract pattern matching relies on abstract domains to
-first collect a set of conservative constraints for every transition of the
-pattern based on the events from the input that may match it. 
-It then uses these transition constraints to perform a fixpoint computation 
-over the finite state machine representation of the pattern, during which it 
-refines the transition constraints such that the events that cannot form a 
-complete path, i.e., a path to a final state., are excluded.  
-Finally, the original stream of events is filtered based on the resulting set 
-of constraints.
+We address these challenges two fold:
+(i) we translate an expressive class of regular-expression like patterns to 
+relational queries such that they can benefit from decades of progress in 
+relational optimizers, and
+(ii) we introduce the technique of {\em abstract pattern matching}, a linear 
+time preprocessing step which, adapting ideas from symbolic execution and 
+abstract interpretation, discards events from the input guaranteed not to 
+appear in successful matches.  
+Abstract pattern matching first computes in a conservative manner the 
+output-relevant domain of every event variable in the pattern based on the 
+(unary) predicates that reference it.
+It then further refines these domains based on the structure of the pattern as 
+well as its join predicates. 
+The outcome is an {\em abstract filter} that when applied to the original 
+stream excludes events that cannot form a complete match.
 
 We implemented and applied {\em abstract pattern matching} in COSMOS/Scope to 
-an industrial benchmark where we obtained up to 3 orders
-of magnitude reduction in shuffled data, 26\% average reduction in total
-processing time and 18\% average reduction in end-to-end latency.
+an industrial benchmark where we obtained up to 3 orders of magnitude reduction 
+in shuffled data and 1.23x average speedup in total processing time.
+% and 1.09x average speedup in end-to-end latency
 \end{abstract}
 
 \input{01_intro}
