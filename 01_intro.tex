@@ -150,11 +150,14 @@ are balanced out by the dramatic speedup in the sorting/shuffling/pattern
 matching phases which results in an overall decrease in both processing costs 
 and latency.  
 Our experimental evaluation shows up to 3 orders of magnitude reduction in 
-shuffled data as well as 18\% reduction in end-to-end latency for 2 workloads:
+shuffled data as well as 1.23x average speedup in total processing time for 2 
+workloads:
 i) telemetry analysis over the events produced by an event-reporting 
 infrastructure, and
 ii) repository analysis over the dataset of events published by GitHub.
-
+We note that the reduction in total processing time is especially important in 
+multi-tenant clusters where clients are billed based on the amount of 
+computational resources they consume.   
 
 
 To summarize our contributions we remark that:
@@ -166,8 +169,8 @@ To summarize our contributions we remark that:
 	order to minimize the sorting/shuffling costs of large scale mining of 
 	patterns within map-reduce frameworks.
 	\item We highlight how the concepts of symbolic execution and abstract 
-	interpretation can be used to design similar optimizations for other user 
-	defined reduce operators.
+	interpretation can be used to design similar optimizations for other 
+	user-defined reduce operators.
 	\item We prototype our solution and show on an industrial benchmark that 
 	it delivers significant reductions in the amount of data sorted/shuffled as 
 	well as processing times.  
@@ -180,6 +183,7 @@ sections~\ref{sec:mot_example} and~\ref{sec:design}.
 The choices we made in implementing our solution are explored in 
 section~\ref{sec:implementation}, followed by the presentation of the results 
 of our experimental evaluation in section~\ref{sec:evaluation}. 
-Finally, we give our concluding remarks in section~\ref{sec:conclusions}.   
+Finally, section~\ref{sec:conclusions} gives our concluding remarks and 
+comments on future directions.   
 
 
