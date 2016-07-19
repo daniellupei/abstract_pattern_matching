@@ -413,6 +413,40 @@ timeline, i.e. finer granularity in regions with higher probability of events
 \section{Design}
 \label{sec:design}
 
+\begin{comment}   
+Pattern matching algorithms require the input stream of events to be
+(partially) sorted on time, while this is not always the case in practice due
+to competing constraints of other stages in the data processing pipeline. 
+\end{comment}
+Evaluating pattern matching queries in a map-reduce framework usually 
+adds a reduction step in order to sort the input, which can become the main 
+bottleneck of the analysis, both at the network level (large amounts of 
+shuffled data) and at the processing level.
+The standard approach to minimize the cost of sorting/data shuffling has been 
+to introduce a {\em preprocessing} phase which first filters the input based on 
+the {\em selection} predicates, i.e.\ removes all events that do not satisfy 
+the guard of at least one event variable while ignoring its {\em join} 
+predicates.
+This {\em preprocessing} phase can significantly reduce both processing costs 
+and latency since it takes linear time in the size of the input (as opposed to 
+$O(nlogn)$ for sorting) and is embarrassingly parallel, i.e.\ scales out with 
+the number of computing resources available.
+Moreover, it can be merged with the previous operator in the data processing 
+pipeline thus incurring no extra costs for materialization or data transfer.    
+
+
+
+In our work we extend the opportunities for query plan optimizations across all 
+the stages of the workload, beyond just pipelining the preprocessing phase of 
+the pattern matcher, by leveraging the fact that a large class of patterns can 
+be equivalently expressed as relational queries.
+Whenever that is not the case we can narrow the scope of our optimizations to 
+the sections of the pattern that do.
+The resulting relational expressions can then be optimized within the scope of 
+the entire (predominantly relational) workload based on decades of progress in 
+relational optimizations.  
+
+
 We consider queries specified as a symbolic finite automaton where each
 transition is annotated by a variable and a guard.
 The variable is used to bind the fields of the currently considered event while 
@@ -424,38 +458,8 @@ or {\em join} predicates, which may also reference the variables of preceding
 transitions.
 In particular, the guards of start transitions can only use selection 
 predicates.  
-   
-Pattern matching algorithms require the input stream of events to be
-(partially) sorted on time, while this is not always the case in practice due
-to competing constraints of other stages in the data processing pipeline. 
-Thus, evaluating pattern matching queries in a map-reduce framework usually 
-adds a reduction step in order to sort the input, which can become the main 
-bottleneck of the analysis, both at the network level (large amounts of 
-shuffled data) and at the processing level (in case of data-skew).
-
-The standard approach to minimize the cost of sorting/data shuffling has been 
-to introduce a {\em preprocessing} phase which first filters the input based on 
-the {\em selection} predicates in the transition guards, i.e.\ removes all 
-events that do not satisfy the guard of at least one transition while ignoring 
-its {\em join} predicates.
-This {\em preprocessing} phase can significantly reduce both processing costs 
-and latency since it takes linear time in the size of the input (as opposed to 
-$O(nlogn)$ for sorting) and is embarrassingly parallel, i.e.\ scales out with 
-the number of computing resources available.
-Moreover, it can be merged with the previous operator in the data processing 
-pipeline thus incurring no extra costs for materialization or data transfer.    
 
 
-In our work we extend the opportunities for query plan optimizations across all 
-the stages of the workload, beyond just pipelining the preprocessing phase of 
-the pattern matcher, by leveraging the fact that a large class of symbolic 
-finite automata have a corresponding relational calculus expression (possibly 
-with counting quantifiers).
-Whenever that is not the case we can narrow the scope of our optimizations to 
-the sections of the pattern that do.
-The resulting relational expressions can then be optimized within the scope of 
-the entire (predominantly relational) workload based on decades of progress in 
-relational optimizations.  
 We remark that the translation to relational expressions is not limited only to 
 acyclic symbolic automata, but also to automata with cycles of fixed length, 
 i.e.\ each iteration of the cycle has the same number of transitions.
