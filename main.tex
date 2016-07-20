@@ -55,33 +55,30 @@ Todd Mytkowicz\\
 \maketitle
 \begin{abstract}
 Event-series pattern matching is a major component of large-scale data 
-analytics pipelines enabling a wide range of system diagnostics tasks.
-% (from tracing network bottlenecks to detecting security breaches). 
-While existing solutions focus on the online scenario and expect 
-their data to be (mostly) sorted on time, this is not the case in many 
-situations where batch processing is preferable due to the large volume of data 
-and where the physical layout has to meet wider system requirements. 
-On map-reduce frameworks the consequence is an expensive ``shuffle the world'' 
-stage wherein data are sorted and shuffled across the network.  
-Moreover, existing systems treat the pattern matching engine as a black box 
-which prevents them from optimizing the entire data analytics pipeline (and in 
-particular, this costly shuffle).
+analytics pipelines enabling a wide range of system diagnostics tasks.  
+%While existing solutions focus on the online scenario and expect 
+%their data to be (mostly) sorted on time, this is not the case in many 
+%situations where batch processing is preferable due to the large volume of data 
+%and where the physical data layout has to meet wider system requirements. 
+A precursor to pattern matching is an expensive ``shuffle the world'' stage
+wherein data are ordered by time and shuffled across the network.  Because many
+existing systems treat the pattern matching engine as a black box, they are
+unable to optimizing the entire data analytics pipeline, and in particular, this
+costly shuffle.
 
-We address these challenges two fold:
-(i) we translate an expressive class of regular-expression like patterns to 
-relational queries such that they can benefit from decades of progress in 
-relational optimizers, and
-(ii) we introduce the technique of {\em abstract pattern matching}, a linear 
-time preprocessing step which, adapting ideas from symbolic execution and 
-abstract interpretation, discards events from the input guaranteed not to 
-appear in successful matches.  
-Abstract pattern matching first computes in a conservative manner the 
-output-relevant domain of every event variable in the pattern based on the 
-(unary) predicates that reference it.
-It then further refines these domains based on the structure of the pattern as 
-well as its join predicates. 
-The outcome is an {\em abstract filter} that when applied to the original 
-stream excludes events that cannot form a complete match.
+This paper demonstrates how to optimize such queries. We first translate an
+expressive class of regular-expression like patterns to relational queries such
+that they can benefit from decades of progress in relational optimizers, and
+then we introduce the technique of {\em abstract pattern matching}, a linear
+time preprocessing step which, adapting ideas from symbolic execution and
+abstract interpretation, discards events from the input guaranteed not to appear
+in successful matches.  Abstract pattern matching first computes a conservative
+representation of the output-relevant domain of every transition in a pattern
+based on the (unary) predicates of that transition.  It then further refines
+these domains based on the structure of the pattern (i.e., paths through the
+pattern) as well as any of the pattern's join predicates across transitions.
+The outcome is an {\em abstract filter} that when applied to the original stream
+excludes events that are guaranteed not to participate in a match.
 
 We implemented and applied {\em abstract pattern matching} in COSMOS/Scope to 
 an industrial benchmark where we obtained up to 3 orders of magnitude reduction 
