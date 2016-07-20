@@ -124,9 +124,9 @@ Q \coloneq
 \\ 
 &
 \phi(\symv{s},\symv{p}) \equiv 
-(\facc{\symv{s}}{t} < \facc{\symv{p}}{t}).\  
-(\facc{\symv{p}}{t} < \facc{\symv{s}}{t} + t_{out}).\ 
-(\facc{\symv{p}}{user} = \facc{\symv{s}}{user}).\ 
+(\facc{\symv{s}}{t} < \facc{\symv{p}}{t})\ .\  
+(\facc{\symv{p}}{t} < \facc{\symv{s}}{t} + t_{out})\ .\ 
+(\facc{\symv{p}}{user} = \facc{\symv{s}}{user})\ .\ 
 \\
 &\qqquad
 \slice{\syms{\oR}}
@@ -140,8 +140,8 @@ denotes the slicing of $\syms{\oR}$ defined as:
 \begin{align*}
 \{ \tuple{ \facc{\symv{r}}{t}, \facc{\symv{r}}{user}} \mid 
 \symv{r} \in \syms{\oR} : 
-\facc{\symv{r}}{t} \in (\facc{\symv{s}}{t} : \facc{\symv{p}}{t}) .\ 
-\facc{\symv{r}}{user} = \facc{\symv{s}}{user}
+\facc{\symv{r}}{t} \in (\facc{\symv{s}}{t} : \facc{\symv{p}}{t})\ .\ 
+(\facc{\symv{r}}{user} = \facc{\symv{s}}{user})
 \},
 \end{align*}
 which allows us to re-write the \texttt{NOT EXISTS} sub-clause as an emptiness 
@@ -212,14 +212,12 @@ We do so by employing a series of {\em data and predicate abstractions}
 that generate conservative versions of the original filters.
 
 
-\newcommand{\oMS}{\overline{M_S}}
-\newcommand{\oPS}{\overline{\precs{S}}}
 
 \newcommand{\NotExistsP}{\ident{NotExistsP}}
-\newcommand{\NotPrecedesP}{\oPS}
-\newcommand{\NotPrecedesPP}{\overline{\omega_S}}
-\newcommand{\NotPrecedesPPP}{\overline{\psi_S}}
-\newcommand{\NotPrecedesPPPP}{\overline{\upsilon_S}}
+\newcommand{\PrecedesP}{\precs{S}}
+\newcommand{\PrecedesPP}{\omega_S}
+\newcommand{\PrecedesPPP}{\psi_S}
+\newcommand{\PrecedesPPPP}{\upsilon_S}
 
 
 \newcommand{\interval}[1]{\lfloor #1 \rceil}
@@ -227,25 +225,27 @@ that generate conservative versions of the original filters.
 \newcommand{\hashid}[1]{\# #1}
 
 We showcase our techniques on the filter corresponding to the S event variable,
-which we first complement in order to obtain the set of "Search" events that we 
-want discarded.
-\begin{align*}
-\oPS(\symv{s}) 
-&\equiv  
-\forall \tuple{\facc{\symv{p}}{t}, \_} \in 
-\slice{\syms{P}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
-	\facc{\symv{s}}{user}} :\ 
-\\
-&\qquad
-\slice{\syms{\oR}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}}
-\neq \emptyset 
-\end{align*}
+which highlights the fact that the only Search events in the output are those  
+that have only Read-review events between themselves and the next Purchase 
+events occurring within a $t_{out}$ window of time.
 
-This filter highlights the fact that we can safely remove all ``S'' events that
-do not have only ``R'' events between themselves and every succeeding event
-``P'' occurring within a $t_{out}$ window of time.
+\begin{comment}
+ we first complement in order to obtain the set of "Search" events that we 
+ want discarded.
+ \begin{align*}
+ \PrecedesP(\symv{s}) 
+ &\equiv  
+ \forall \tuple{\facc{\symv{p}}{t}, \_} \in 
+ \slice{\syms{P}}
+ {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
+ 	\facc{\symv{s}}{user}} :\ 
+ \\
+ &\qquad
+ \slice{\syms{\oR}}
+ {(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}}
+ \neq \emptyset 
+ \end{align*}
+\end{comment}
 
 In order to minimize the cost of filtering we use {\em data abstraction} to 
 compute time and space efficient representations of sets $\syms{S}$ and 
@@ -256,11 +256,11 @@ Then, the time dimension of sets $\syms{S}$, $\syms{\oR}$ could be efficiently
 encoded and queried as interval maps, i.e.\ bit vectors where each bit 
 corresponds to a time interval and a set bit would denote the fact that an 
 event has occurred within the corresponding interval.
-Using this abstraction the filtering predicate becomes:
+Using this abstraction the filter becomes:
 \begin{align*}
-\oPS^{\interval{t}}(\symv{s}) 
+\PrecedesP^{\interval{t}}(\symv{s}) 
 &\equiv  
-\forall \tuple{\facc{\symv{p}}{t}, \_} \in 
+\exists \tuple{\facc{\symv{p}}{t}, \_} \in 
 \slice{\syms{P}}
 {\interval{\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}},
 	\facc{\symv{s}}{user}} :\ 
@@ -269,10 +269,10 @@ Using this abstraction the filtering predicate becomes:
 \slice{\syms{\oR}}
 {\uinterval{\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}},\; 
  \facc{\symv{s}}{user}}
-\neq \emptyset 
+= \emptyset 
 \end{align*}
 where in order to maintain conservativeness (ie.\
-$\NotPrecedesP^{\interval{t}} \rightarrow \NotPrecedesP$) we had to
+$\PrecedesP \rightarrow \PrecedesP^{\interval{t}} $) we had to
 over-approximate the $\facc{\symv{s}}{t}:\facc{\symv{s}}{t} + t_{out}$ 
 range, but under-approximate the
 $\facc{\symv{s}}{t}:\facc{\symv{p}}{t}$ interval.
@@ -284,11 +284,11 @@ sets.
 If on the other hand we abstract over user ids via hashing, that is
 use a compact representation of sets $\syms{S}$, $\syms{\oR}$ that stores time
 information only per user hash bucket as opposed to individual user ids, then
-the resulting symbolic filter:
+the resulting abstract filter:
 \begin{align*}
 &
-\NotPrecedesP^{\hashid{user}}(\symv{s}) \equiv 
-\forall\; \tuple{\facc{\symv{p}}{t}, \_} \in 
+\PrecedesP^{\hashid{user}}(\symv{s}) \equiv 
+\exists\; \tuple{\facc{\symv{p}}{t}, \_} \in 
 \slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
 	\hashid{\facc{\symv{s}}{user}}} :\ 
@@ -297,11 +297,11 @@ the resulting symbolic filter:
 \slice{\syms{\oR}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; 
 	\hashid{\facc{\symv{s}}{user}}}
-\neq \emptyset 
+= \emptyset 
 \end{align*}
 does not satisfy our safety requirement 
-(i.e.\ $\NotPrecedesP^{\hashid{user}} \nrightarrow \NotPrecedesP$).
-This happens because hashing can only provide over-approximations of sets while,
+(i.e.\ $\PrecedesP \nrightarrow \PrecedesP^{\hashid{user}}$).
+This happens because hashing can only provide over approximations of sets while,
 in order to ensure conservativeness, the abstractions used for this filter need
 to provide both over and under approximations.
 While there are several ways to address this issue (for an alternative solution 
@@ -316,25 +316,25 @@ or efficiently abstracted over.
 For instance, our filter could be strengthened into:
 \begin{align*}
 &
-\NotPrecedesPPP(\symv{s}) \equiv 
+\PrecedesPPP(\symv{s}) \equiv 
 \slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
 	\facc{\symv{s}}{user}}
- = \emptyset,
+ \neq \emptyset,
 \end{align*} 
 which eliminates only those search events that are not followed by a purchase
 event within $t_{out}$, and was obtained from the base case of
-the universal quantifier in $\NotPrecedesP$.
+the existential quantifier in $\PrecedesP$.
 Since this version only requires over-approximation, one can safely use hashing
 to abstract over the user id dimension of $\syms{P}$, i.e.\ 
-$\NotPrecedesPPP^{\hashid{user}} \rightarrow \NotPrecedesPPP$, where
+$\PrecedesPPP \rightarrow \PrecedesPPP^{\hashid{user}}$, where
 \begin{align*}
 &
-\NotPrecedesPPP^{\hashid{user}}(\symv{s}) \equiv 
+\PrecedesPPP^{\hashid{user}}(\symv{s}) \equiv 
 \slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
 	\hashid{\facc{\symv{s}}{user}}}
- = \emptyset .
+ \neq \emptyset .
 \end{align*}
 
 Moreover, predicate abstraction also reveals the well known Bloom
@@ -343,9 +343,9 @@ predicate $\facc{P}{user} = \facc{S}{user}$ from the original query.
 This becomes apparent if we ignore time in the filter above:
 \begin{align*}
 &
-\NotPrecedesPPP^{\hashid{user}}(\symv{s}) \equiv 
+\PrecedesPPP^{\hashid{user}}(\symv{s}) \equiv 
 \slice{\syms{P}}{*, \hashid{\facc{\symv{s}}{user}}}
- = \emptyset,
+ \neq \emptyset,
 \end{align*}
 and we use a Bloom filter to implement 
 $\slice{\syms{P}}{*, \hashid{\facc{\symv{s}}{user}}}$.
@@ -420,7 +420,7 @@ to competing constraints of other stages in the data processing pipeline.
 \end{comment}
 Evaluating pattern matching queries in a map-reduce framework usually 
 adds a reduction step in order to sort the input, which can become the main 
-bottleneck of the analysis, both at the network level (large amounts of 
+bottleneck of the workload, both at the network level (large amounts of 
 shuffled data) and at the processing level.
 The standard approach to minimize the cost of sorting/data shuffling has been 
 to introduce a {\em preprocessing} phase which first filters the input based on 
@@ -441,61 +441,42 @@ the stages of the workload, beyond just pipelining the preprocessing phase of
 the pattern matcher, by leveraging the fact that a large class of patterns can 
 be equivalently expressed as relational queries.
 Whenever that is not the case we can narrow the scope of our optimizations to 
-the sections of the pattern that do.
+the sub-patterns that do.
 The resulting relational expressions can then be optimized within the scope of 
 the entire (predominantly relational) workload based on decades of progress in 
 relational optimizations.  
 
 
-We consider queries specified as a symbolic finite automaton where each
-transition is annotated by a variable and a guard.
-The variable is used to bind the fields of the currently considered event while 
-the guard is a propositional formula in disjunctive normal form which decides 
-whether the transition can be triggered or not.  
-The atomic formulas of the guard are either {\em selection} predicates, which 
-only reference the variable associated with the current transition,
-or {\em join} predicates, which may also reference the variables of preceding 
-transitions.
-In particular, the guards of start transitions can only use selection 
-predicates.  
-
-
-We remark that the translation to relational expressions is not limited only to 
-acyclic symbolic automata, but also to automata with cycles of fixed length, 
-i.e.\ each iteration of the cycle has the same number of transitions.
-This class of symbolic automata is of particular importance as it includes the 
-vast majority of patterns found in benchmarks and in industrial workloads.  
-
-
 Even in the scenarios where the relational optimizer decides that using the 
 pattern matcher leads to the most efficient query plan, we can leverage the 
-relational expressions to generate a series of {\em abstract} filters that can 
-dramatically increase the reduction ratio achieved by the preprocessing step by 
-also taking advantage of the filtering power of {\em join} predicates (as 
-opposed to just the {\em selection} predicates).   
+relational expressions to generate a {\em precise filter} which retains only 
+those input events that appear within a complete match. 
+It achieves that by fully exploiting the pattern's structure along with its 
+{\em join} predicates, as opposed to just the {\em selection} predicates.   
+Applying the precise filter as part of the preprocessing step leads to a 
+dramatic improvement in its reduction ratio. 
+This is unsurprising considering that the number of events forming complete 
+matches is usually tiny compared to the input stream's size.
+ 
+
+However in many cases the precise filter would be too expensive to build and 
+evaluate as such.
+Therefore, we coarsen it to obtain an {\em abstract} filter
+which can be constructed and queried in a time and space efficient manner.
+In particular, we make use of both {\em data} and {\em predicate} 
+abstraction in order to generate a filter that, while conservative, closely 
+matches the {\em precise} filter. 
 Thus, in many cases we manage to discard most of the events that are guaranteed 
 not to take part in a successful match and significantly reduce the amount of 
 data fed into the pattern matcher.
-
-We start from the relational formulas and produce {\em symbolic} filters for 
-each transition, that retain only those events from the input which trigger 
-that transition and take part in a complete match.
-However in many cases these filters would be too expensive to build and 
-evaluate as such.
-Therefore, we coarsen them to obtain a set of {\em abstract} filters
-that can be constructed and queried in a time and space efficient manner.
-In particular, we make use of both {\em data} abstraction and {\em predicate} 
-abstraction in order to generate filters that, while conservative, closely 
-match the {\em symbolic} filters. 
 We explore the trade-offs between the overheads incurred in building/querying
-the filters and their accuracy. 
+the filter and its accuracy. 
 
 
 The derivation of abstract filters is not strictly tied to the ability to 
-generate a semantically equivalent relational expression for a symbolic 
-automaton. By adding the fixpoint construct, we are able to apply similar 
-techniques to generate both the {\em symbolic} and the {\em abstract} 
-filters.
+generate a semantically equivalent relational expression for a pattern. 
+By adding a fixpoint construct, we demonstrate analogous techniques for 
+generating both the {\em precise} and {\em abstract} filters.
 
 
 \begin{comment}
@@ -508,19 +489,58 @@ Finally the last one enforces ordering constraints between {\em consecutive}
 transitions of the pattern.
 \end{comment}
 
-\subsection{From automata to relational expressions}
+\subsection{From patterns to relational queries}
 
-We assume that patterns are specified in terms of symbolic finite automata and
-we formally define a symbolic finite automaton as $\cA = (S, T, s_{start}, C),$ 
+To simplify the presentation we detail our approach on patterns specified as a 
+symbolic finite automata where each transition is annotated by an event 
+variable and a guard.
+Turning regular expressions-like patterns to automata is straightforward,
+and in many cases there is a direct mapping between the pattern's event 
+variables and the automaton's transitions.
+Figure~\ref{fig:serp_pattern} shows the symbolic automaton corresponding to the 
+(S|E)R*P pattern, where S,R, and P, correspond to the same "Search", "Read 
+review" and "Purchase" events described in section~\ref{sec:mot_example}, and E 
+denotes the event of responding to a promotional email.
+In the guards of the pattern, the $SE$ variable references either the $S$ or 
+$E$ variable depending on the event that initiated the current match. 
+
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[clip, trim=0cm 10cm 0cm 3cm,width=\columnwidth]
+	{graphs/example_sm3.pdf}
+	\caption{Symbolic automata for the (S|E)R*P pattern.}
+	\label{fig:serp_pattern}
+\end{figure}
+
+
+We formally define a symbolic finite automaton as $\cA = (S, T, s_{start}, C),$ 
 where $S$ is the set of states, $T$ is the set of transitions, $s_{start}$ is 
 the initial state and $C$ is the set of completion (accepting) states.
 Each transition is defined in terms of the tuple $(X, p_X, src, dst)$ where $X$ 
-is the variable binding the event considered for that transition, $p_X$ is the 
-guard deciding whether the transition is triggered or not, and $src$ and $dst$ 
-are the transition's source and destination states.
+is the variable binding the event currently considered by that transition, 
+$p_X$ is the guard (a propositional formula) 
+deciding whether the transition can be triggered or not, and $src$ and $dst$ 
+are the transition's source and destination states.  
+The atomic formulas of the guard are either {\em selection} predicates, which 
+only reference the variable associated with the current transition,
+or {\em join} predicates, which may also reference the variables of preceding 
+transitions.
+In particular, the guards of start transitions can only use selection 
+predicates.  
+
+
+We remark that the translation to relational expressions is not limited only to 
+acyclic symbolic automata, but also to automata with cycles of fixed length, 
+i.e.\ each iteration of the cycle has the same number of transitions.
+This class of symbolic automata is of particular importance as it covers the 
+vast majority of patterns found in benchmarks and in industrial workloads.  
+
+
+
 
 {\bf Notation.}
-We usually denote states by indices $i, j, k,$, and we abuse notation to refer 
+We usually denote states by indices $i, j, k$, and we abuse notation to refer 
 to transitions using the variable name they introduce (eg. $X, Y, Z$).
 In addition we refer to states and transitions also as nodes and edges, 
 respectively, in the corresponding graph of an automaton.
@@ -548,23 +568,26 @@ paths.
 If a transition is triggered within a partial match, then its corresponding 
 variable is initialized by the event that triggered it, otherwise that variable 
 is assigned null.
+For our example, the schema of query $Q_2$ consists of $S$, $E$ and $P$, and 
+for each of its output tuples either $S$ or $E$ is set to null.
 
 
 State queries $Q_i$ are defined as the union of transition queries $Q_X$ over 
 all the incoming non-cycle transitions into state $i$, where each transition 
 query $Q_X$ computes partial matches corresponding to the paths ending with 
 transition $X$.
-In turn, the $Q_X$ query corresponding to a non-cycle transition is defined as 
-the join between node query $Q_k$ and the input relation of events, where $k$ 
-is the source of the transition and each event considered is bound by event 
-variable $X$.
+In turn, the $Q_X$ query corresponding to a non-starting, non-cycle transition 
+is defined as the join between node query $Q_k$, where $k$ is the source of the 
+transition, and the input relation of events, where each event considered is 
+bound by variable $X$.
 The condition enforced by $Q_X$ consists of the guard $p_X$ along with the 
 constraint that the timestamp of $X$ succeeds the last event in the partial 
 match produced by $Q_k$.
 Additionally, a nested query ensures that no other events 
 exist between the last event matched by $Q_k$ and the event bound by $X$, 
 except for events matching cycle transitions starting and ending in $k$.
-
+By contrast, for starting transitions we only need to apply the transition's 
+guard $p_X$ over the input relation.
 
 The translation process iterates in topological order over the nodes of the DAG
 obtained by ignoring the cycle transitions of the automaton.
@@ -573,49 +596,74 @@ non-cycle transitions $Q_X$ and then $Q_i$ is defined as their union.
 The schema of $Q_i$ is established as the union of the schemas of the incoming 
 transitions $Q_X$.
 
+Applying the procedure outlined above to our example produces the following 
+queries:
+\begin{align*}
+%Q_0 =& \{\tuple{}\}
+%\quad
+Q_S\!=& \{ S \mid S \in \Ev : p_S \}
+\;\;
+Q_E\!= \{ E \mid E \in \Ev : p_E \}
+\;\;
+Q_1\!= Q_S \cup Q_E
+\\
+Q_P\!=& \{ \tuple{SE,P} \mid SE \in Q_1, P \in \Ev:
+p_P\ .\ (\facc{SE}{t} < \facc{P}{t}) . 
+\\
+& 
+\qqquad\quad
+\{ R \mid R \in \Ev : \facc{R}{t} \in (\facc{SE}{t}, \facc{P}{t})\ .\ 
+						! p_R \} = \emptyset
+ \}
+\\
+Q_2\!=& Q_P
+\end{align*}
 
-In order to perform this translation for all automata whose cycles have a fixed 
-length ($\geq 1$), we first normalize them such that each cycle starts and ends 
-with the same state.
-More formally, the cycles of a normalized automata have a single incoming edge 
-and a single outgoing edge and both of them enter and exit, respectively, the 
-same node.
+\subsubsection{Translating multi-transition cycles}
+
+In order to translate to relational queries automata with multi-transition 
+cycles of fixed length ($\geq 1$), we first normalize them such that each cycle
+has a single starting node and a single ending node, and that the two coincide.
+A starting node for a cycle is defined as the destination of one of its 
+incoming edges, while an ending node is the source of one of its outgoing edges.
 We remark, that cycles of fixed length cannot have transversal edges (paths), 
-i.e.\ edges (paths) that connect non-adjacent nodes, as this would violate the 
-restriction that each iteration of the cycle has the same length.
+i.e.\ edges (paths) that connect non-adjacent nodes in the cycle, as this would 
+violate the restriction that each of the cycle's iterations has the same length.
 
-Given an automaton with a cycle that has multiple incoming and outgoing edges 
-we first duplicate the cycle for each additional incoming edge. 
-Then we duplicate the path between the starting and ending nodes of the cycle, 
-where starting node of a cycle is defined as the destination of its incoming 
-edge while the ending node is the source of the last of its outgoing edges. 
-Finally, we change the source of each outgoing edge to be the corresponding 
+
+Given an automaton with a cycle that has multiple starting and ending nodes 
+we first duplicate the cycle for each additional starting node. 
+Then, for the resulting cycles we duplicate the path between their starting 
+node and their last ending node (i.e.\ the furthest from the starting node).  
+Finally, we change the source of each outgoing edge to the corresponding 
 node in the newly created path, resulting in a cycle whose incoming and 
 outgoing edges have the same node as destination and source, respectively.
-By applying this procedure to every cycle with multiple incoming and outgoing 
-edges we obtain a normalized automaton.  
+By applying this procedure to every cycle with multiple starting and ending 
+nodes we obtain a normalized automaton.  
 We remark that, while the resulting automaton may have multiple cycles starting 
 and ending with the same node, all of those must also have the same length.
 
 
 The only part of the translation process that changes when generalizing from 
 automata with single edge cycles to normalized automata is the specification of 
-transition queries $Q_X$, and in particular, the specification of its nested 
-query should the source state of $X$ be the starting/ending point of a cycle.
+non-cycle transition queries $Q_X$, and in particular, the specification of its 
+nested query should the source state $k$ of $X$ be the starting/ending point of 
+a cycle.
 We recall that in the case of cycles with a single transition $Y$ the nested 
 query enforces that all events occurring in the interval between the last event 
 in the partial match computed by $Q_k$ and the timestamp of event variable $X$ 
 satisfy guard $p_Y$. 
-By contrast, in the case of multi-edge fixed length cycles, for each event in 
-the same interval we establish its position (based on  the count of events with 
-smaller timestamps) and we ask that it satisfies the guard of the transition 
-corresponding to that position in the cycle modulo the length of the cycle.
+By contrast, in the case of multi-transition fixed length cycles, for each 
+event in the same interval we establish its position (based on  the count of 
+events with smaller timestamps) and we ask that it satisfies the guard of the 
+transition corresponding to that position in the cycle modulo the length of the 
+cycle.
 If multiple cycles initiate and conclude at the same node, we alternatively 
 have to enforce that all events in an iteration satisfy the corresponding 
 transition guards of a particular cycle.
 
 
-\subsection{Symbolic filter generation}
+\subsection{Precise filter generation}
 \label{sec:prec_filter_generation}
 
 
@@ -626,49 +674,76 @@ the selection of specific join algorithms.
 In the following we detail our proposal for speeding up pattern matching in a 
 distributed environment based on its representation in the relational world as 
 a series of unions and joins.
-More specifically, even though this representation may prove too expensive to 
-evaluate directly, one can still use it to design filters meant to discard from 
-the input (almost) all the events that do not participate in a complete match 
-and thus vastly reduce the number of events ultimately processed by the pattern 
-matching engine.
+The first step in this process is to derive a {\em precise} filter which 
+retains from the input relation only those events guaranteed to appear in a 
+successful match.
+While it is understood that constructing and applying such filters may prove 
+too expensive to evaluate directly, we discuss them nonetheless as they are 
+essential in guiding the design of the {\em abstract} filter, its time and 
+space efficient variant. 
+
+
+
+% Even though this representation may prove too expensive to evaluate directly, 
+% we use it as a stepping stone for building filters designed to discard from 
+% the input (almost) all the events that do not participate in a complete match 
+% and thus vastly reduce the number of events ultimately processed by the 
+% pattern matching engine.
  
- % discuss difference between fields referenced by selection predicates and 
- %fields referenced by join predicates, and how the symbolic filters are 
- %concerned with the latter.
+% discuss difference between fields referenced by selection predicates and 
+% fields referenced by join predicates, and how the symbolic filters are 
+% concerned with the latter.
 
 
-The first step in this process is to generate for each transition of the 
-automaton a {\em symbolic} filter.
-These filters are precise in the sense that they retain only the events  
-guaranteed to appear in a successful match.
-While it is understood that constructing and applying such filters is 
-prohibitively expensive, we discuss them nonetheless as they are essential in 
-guiding the design of {\em abstract} filters, their time and space efficient 
-variants. 
-In current work we derive such filters only for non-cycle transitions and 
-single-edge cycles since the filters for transitions in multi-edge cycles 
+
+
+
+
+The precise filter of an automaton $\cA$ consists of multiple components, one 
+for each of its transitions, and an input event is rejected if it does not 
+satisfy any of these components. 
+In current work we derive precise filters only for non-cycle transitions and 
+single-edge cycles, since the filters for transitions in multi-edge cycles 
 are impractical to build/apply and abstract over, as they require the position 
 of the considered event within a particular time interval.
+ 
 
+The precise filter $\precs{X}$ corresponding to a non-cycle transition $X$ of 
+automaton $\cA$ is extensionally defined in terms of the events 
+from the input that bind the event variable $X$ in the output of its 
+semantically equivalent relational query $Q_{\cA}$. 
+Therefore $\precs{X}$ can be obtained from the definition of $Q_{\cA}$ by 
+projecting away (i.e.\ existentially quantifying) all the other event variables 
+in its output besides $X$. 
+In our running example the precise filter derived for transition $P$ is:
+\begin{align*}
+&\precs{P}(P) \equiv \exists SE \in Q_1:
+p_P\ .\ (\facc{SE}{t} < \facc{P}{t})\ . 
+\\ 
+&\qqquad\quad
+\{ R \mid R \in \Ev : \facc{R}{t} \in (\facc{SE}{t}, \facc{P}{t})\ .\ 
+! p_R \} = \emptyset
+\end{align*}
 
-
-Given an automaton $\cA$ for which we can derive a semantically equivalent  
-relational query $Q_{\cA}$, the symbolic filter $F_X$ corresponding to one of 
-its non-cycle transition $X$ is extensionally defined in terms of the events 
-from the input that bind the event variable $X$ in the output of $Q_{\cA}$. 
-Therefore $F_X$ can be obtained from $Q_{\cA}$ by projecting away (i.e.\ 
-existentially quantifying) all the other event variables in its output besides 
-$X$.
-
-The symbolic filter $F_Y$ of a cycle transition $Y$, with node $k$ as source 
+The precise filter $\precs{Y}$ of a cycle transition $Y$, with node $k$ as 
+source 
 and destination, selects from the input those events that occur within interval 
 $(t_Z, t_W)$, where $t_Z, t_W$, are the timestamps of a pair of event variables 
 $Z, W$, from the output of $Q_{\cA}$ such that $Z, W$ are associated to 
 non-cycle transitions entering and respectively exiting $k$.
-In addition, $F_Y$ also enforces the guard $p_Y$ with its join predicates 
-ignored, as they are guaranteed to be satisfied based on the fact that the 
-nested query generated as part of the definition of $Q_W$ (and which includes 
-$p_Y$) was found to hold during the evaluation of $Q_{\cA}$.
+We note that $\precs{Y}$ does not need to enforce the guard $p_Y$ as it is 
+guaranteed
+that all events between $t_Z$ and $t_W$ satisfy $p_Y$ based on the
+nested query generated as part of the definition of $Q_W$ (and which was found 
+to hold during the evaluation of $Q_{\cA}$).
+For the cycle transition $R$ in our example we generate the following filter:
+\begin{align*}
+\precs{R}(R) \equiv \exists \tuple{SE,P} \in Q_{\cA}: 
+ \facc{R}{t} \in (\facc{SE}{t}, \facc{P}{t})
+\end{align*}
+   
+
+
 
 \begin{comment} 
 The two kinds of transitions (cycle vs non-cycle) generate distinctly different 
@@ -688,40 +763,51 @@ operations like union, intersection, set membership or emptiness testing.
 Adopting such a set-centric evaluation strategy is advantageous in a 
 distributed environment due to the embarrassingly parallel nature of many set 
 operators, but more importantly it gives us a powerful knob in terms of the set 
-representations that we use, such that we can trade off precision in favor of 
-performance. 
-This strategy is what ultimately guides the design of the {\em abstract} 
-filters (which we discuss in sections~\ref{sec:data_abstraction} 
-and~\ref{sec:pred_abstraction}) which make our solution practical.
+representations that we use, making it possible to trade off precision in favor 
+of performance. 
+This strategy is what ultimately guides the design of {\em abstract} 
+filters (discussed in sections~\ref{sec:data_abstraction} 
+and~\ref{sec:pred_abstraction}), which make our solution practical.
    
 
-As a first step we build for every transition $X$ of an automaton $\cA$ so 
-called "symbolic sets", which collect for every event matching the selection 
-predicates of $p_X$ those fields of event variable $X$ referenced by join 
-predicates throughout all the transition guards of $\cA$.
-We then re-write the symbolic filters by replacing each event variable and 
+As a first step we build a {\em symbolic set} $\syms{X}$ for every transition 
+variable $X$ of an automaton $\cA$, 
+which collects the values of $X$'s fields joined throughout all the transition 
+guards of $\cA$, as $X$ is bound to the input events that satisfy $p_X$'s
+selection predicates.
+We then re-write the precise filters by replacing each event variable and 
 selection predicate associated to a transition with its corresponding symbolic 
 set.
 Finally, the join predicates get re-written in terms of slicing, intersection 
 and emptiness testing over these sets.
 
+The process is showcased in section~\ref{sec:mot_example} where we derive 
+symbolic sets $\syms{S}, \syms{R}$ and $\syms{P}$, which we then use in the 
+definition of precise filters $\precs{S}, \precs{R}$ and $\precs{P}$ along with 
+slicing operators that express the join predicates of the pattern.
+We omit the minute technical details of turning transition guards into 
+expressions over symbolic sets as they are not particularly challenging.
+It involves turning the guards into disjunctive normal form, and replacing in 
+each conjunct the transition variables and their selection predicates with the 
+corresponding symbolic set, and finally using slicing to encode their join 
+predicates.    
 
 \subsection{Data abstraction}
 \label{sec:data_abstraction}
 
 
-Building the symbolic filters as described in the previous section is not a 
+Building the precise filters as described in the previous section is not a 
 feasible option, as it would require at least just as much work as computing 
-the final result.
-Nonetheless, the symbolic filters provide an excellent template for designing 
-appropriate set abstractions that can provide the set operations required for 
-their constructing and querying them in a time and space efficient manner. 
+the final result (for eg., for $\precs{R}$).
+Nonetheless, the precise filters provide a template for designing 
+appropriate set abstractions that support the set operations required for 
+constructing and querying them in a time and space efficient manner. 
 Our approach is to use set abstractions that sacrifice precision, while 
 remaining conservative, as we should never eliminate events that would 
 otherwise have contributed to a successful match.
 We call the resulting structures {\em abstract} filters as they are the outcome 
 of employing several abstractions during the process outlined for deriving the 
-symbolic filters.  
+precise filters.  
 
 
 First of all, we remark that the sets we abstract over contain tuples as 
@@ -734,40 +820,54 @@ Second, we note that besides supporting set intersection and set union, the
 choice for a particular set abstraction is deeply influenced by the particular 
 kind of predicates said abstractions needs to support.
 For example, in the case of equality joins an appropriate data abstraction 
-would be to use bloom filters as they provide a low cost solution for testing 
+would be to use Bloom filters as they provide a low cost solution for testing 
 whether o value belongs to a set, with the guarantee of no false negatives.
 For enforcing inequality joins on the other hand, an interval map, i.e.\ a 
 bit vector where each bit stands for a particular interval in the domain,
 provides a similarly low cost abstraction.  
 
-\begin{example}
-One way to address the issues raised by hash-based data abstraction is to 
-re-write the precise filter using min aggregates:
+Finally, depending on whether the symbolic sets are tested for non-emptiness or 
+emptiness, their abstraction has to provide either an over- or an 
+under-approximation of the original contents.
+For instance, when abstracting over the precise filter $\precs{S}$ from the 
+example in section~\ref{sec:mot_example}, we have to use over-approximating set 
+abstractions for $\syms{S}$, while the opposite is true for $\syms{\oR}$.
+While this is of no concern for set abstractions, like interval maps, which 
+support both, it does raise a challenge for abstractions based on hashing, like 
+Bloom filters, which can only provide over-approximations.
+
+
+One way to address the issue raised by hash-based data abstraction wrt.\ sets 
+that require under-approximation is to replace them with the coarsest 
+under-approximation possible, i.e. the empty set $\emptyset$ (as showcased in 
+section~\ref{sec:mot_example}).
+Alternatively, one can re-write the precise filter using min aggregates:
 \begin{align*}
 &
-\NotPrecedesPP(\symv{s}) \equiv 
+\PrecedesPP(\symv{s}) \equiv 
 \min \{ 
-\facc{\symv{r}}{t} \mid 
-\tuple{\facc{\symv{r}}{t}, \_} \in 
-\slice{\syms{\oR}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
-	\facc{\symv{s}}{user}} 
-\}
-\\
-&\qquad
-< \min \{ 
 \facc{\symv{p}}{t} \mid 
 \tuple{\facc{\symv{p}}{t}, \_} \in 
 \slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
 	\facc{\symv{s}}{user}}
-\}.
+\}
+\\
+&\qquad
+< \min \{ 
+\facc{\symv{r}}{t} \mid 
+\tuple{\facc{\symv{r}}{t}, \_} \in 
+\slice{\syms{\oR}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
+	\facc{\symv{s}}{user}} 
+\},
 \end{align*}
-Now, we can safely use hashing to abstract over user ids based on the following
-symbolic filter:
+which captures the fact that a Search event is part of a complete match if the 
+next Purchase event precedes the next event different from Read-review.
+Now, we can safely use hashing to abstract over user ids as follows:
 \begin{align*}
 &
-\NotPrecedesPP^{\hashid{user}}(\symv{s}) \equiv 
+\PrecedesPP^{\hashid{user}}(\symv{s}) \equiv 
 \\
 &\qquad
 \max_{u \in \hashid{user_S}}
@@ -790,12 +890,12 @@ symbolic filter:
 	u}
 \}.
 \end{align*}
-\end{example}
+
 While for our example it was possible to come up with an alternative formulation
 of the filter, this may not always be the case. 
 And even in the cases where it is, the alternatives may be too expensive to
-materialize and query (for eg.\ evaluating $\NotPrecedesPP^{\hashid{user}}$ is
-clearly more costly than $\NotPrecedesP^{\interval{t}}$).
+materialize and query (for eg.\ evaluating $\PrecedesPP^{\hashid{user}}$ is
+clearly more costly than $\PrecedesP^{\interval{t}}$).
 Therefore, in the next section we discuss how {\em predicate abstraction} can 
 mitigate these kinds of challenges.
 
