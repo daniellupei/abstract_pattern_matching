@@ -41,7 +41,7 @@ come up with more efficient query plans than the one outlined above.
 For instance, one can express our example pattern as a SQL query as follows:
 {\small
 \begin{verbatim}
-SELECT S.time, P.time, S.user
+SELECT S.*, P.*
 FROM Ev S, Ev P
 WHERE S.time < P.time
 AND S.name == "S"   
@@ -61,8 +61,7 @@ user,
 while the second part captures the fact that only R events are allowed to take
 place in between these two events.
 The final result of the query is a set of tuples, one per successful match,
-consisting of the timestamps of the initial and final event
-in the match and their user id.
+consisting of the initial and final event in the match.
 
 Since the number of purchase events P are bound to be much lower than the
 search or read review events, performing a broadcast join wrt.\ to the P events
@@ -114,39 +113,75 @@ R \in \Ev: \facc{R}{name} \neq \text{``R''}
 P \in \Ev: \facc{P}{name} = \text{``P''}
 \}
 \end{align*}
-We then re-write the query (using comprehension syntax):
+We also re-write the query, first using comprehension syntax, 
+and then using a slicing operator:
 \begin{align*}
 &
 Q \coloneq 
-\{ \tuple{\facc{\symv{s}}{t}, \facc{\symv{p}}{t}, \facc{\symv{s}}{user}} \mid 
+\{ \tuple{\symv{s}, \symv{p}} \mid 
 \symv{s} \in \syms{S},
-\symv{p} \in \syms{P}: \phi(\symv{s},\symv{p}) \}
+\symv{p} \in \syms{P}: 
 \\ 
 &
-\phi(\symv{s},\symv{p}) \equiv 
-(\facc{\symv{s}}{t} < \facc{\symv{p}}{t})\ .\  
-(\facc{\symv{p}}{t} < \facc{\symv{s}}{t} + t_{out})\ .\ 
+\qqquad\quad\;\;
+\facc{\symv{p}}{t} \in
+(\facc{\symv{s}}{t} : \facc{\symv{s}}{t} + t_{out})\ .\ 
 (\facc{\symv{p}}{user} = \facc{\symv{s}}{user})\ .\ 
 \\
-&\qqquad
+&\qqquad\quad\;\;
+\neg
+(\exists
+\symv{r} \in \syms{\oR} : 
+\facc{\symv{r}}{t} \in (\facc{\symv{s}}{t} : \facc{\symv{p}}{t})\ .\ 
+(\facc{\symv{r}}{user} = \facc{\symv{s}}{user})
+)
+\ \}
+\\
+&
+\;\;\; \coloneq 
+\{ \tuple{\symv{s}, \symv{p}} \mid 
+\symv{s} \in \syms{S},
+\symv{p} \in 
+\slice{\syms{P}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
+	\facc{\symv{s}}{user}}
+: 
+\\ 
+&\qqquad\quad\;\;
 \slice{\syms{\oR}}
-      {(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}} 
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}} 
 = \emptyset  
+\ \}
 \end{align*}
 where 
-$\slice{\syms{\oR}}
-       {(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}}$
-denotes the slicing of $\syms{\oR}$ defined as:
+$\slice{\syms{P}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
+	\facc{\symv{s}}{user}}
+$
+denotes the slicing of $\syms{P}$ defined as:
 \begin{align*}
-\{ \tuple{ \facc{\symv{r}}{t}, \facc{\symv{r}}{user}} \mid 
+\{ \symv{p} \mid 
+\symv{p} \in \syms{P} : 
+\facc{\symv{p}}{t} \in (\facc{\symv{s}}{t} : \facc{\symv{s}}{t} + t_{out})\ .\ 
+(\facc{\symv{p}}{user} = \facc{\symv{s}}{user})
+\},
+\end{align*}
+and similarly for
+$\slice{\syms{\oR}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}}$,
+with the latter allowing us to express the \texttt{NOT EXISTS} sub-clause as an 
+emptiness test.
+
+
+\begin{comment}
+\begin{align*}
+\{ \symv{r} \mid 
 \symv{r} \in \syms{\oR} : 
 \facc{\symv{r}}{t} \in (\facc{\symv{s}}{t} : \facc{\symv{p}}{t})\ .\ 
 (\facc{\symv{r}}{user} = \facc{\symv{s}}{user})
 \},
 \end{align*}
-which allows us to re-write the \texttt{NOT EXISTS} sub-clause as an emptiness 
-test.
-
+\end{comment}
 
 
 \begin{figure}[t]
@@ -170,7 +205,7 @@ For our example pattern we get the following filters:
 \begin{align*}
 \precs{S}(\symv{s}) 
 &\equiv  
-\exists \tuple{\facc{\symv{p}}{t}, \_} \in 
+\exists \symv{p} \in 
 \slice{\syms{P}}
       {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
        \facc{\symv{s}}{user}} :\ 
@@ -180,17 +215,36 @@ For our example pattern we get the following filters:
       {(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}}
  = \emptyset 
 \\
-\precs{R}(\symv{r}) 
+\precs{\oR}(\symv{r}) 
 &\equiv
 \slice{Q}
       {(-\infty\,:\,\facc{\symv{r}}{t}), 
+      	\facc{\symv{r}}{user}, 
        (\facc{\symv{r}}{t}\,:\,\infty), 
        \facc{\symv{r}}{user}} 
 \neq \emptyset 
 \\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+&\equiv
+\exists \symv{s} \in 
+\slice{\syms{S}}{(-\infty\,:\,\facc{\symv{r}}{t}), \facc{\symv{r}}{user}},
+\\
+&\quad
+\exists \symv{p} \in 
+\slice{\syms{P}}
+{(\max(\facc{\symv{s}}{t},\facc{\symv{r}}{t})\,:\,\facc{\symv{s}}{t} + t_{out}),
+	\facc{\symv{r}}{user}}
+: 
+\\ 
+&\qquad\quad
+\slice{\syms{\oR}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{r}}{user}} 
+= \emptyset  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\\
 \precs{P}(\symv{p}) 
 &\equiv  
-\exists \tuple{\facc{\symv{s}}{t}, \_} \in 
+\exists \symv{s} \in 
 \slice{\syms{S}}
       {(\facc{\symv{p}}{t} - t_{out}\,:\,\facc{\symv{p}}{t}),  
        \facc{\symv{p}}{user}} :\
@@ -260,7 +314,7 @@ Using this abstraction the filter becomes:
 \begin{align*}
 \PrecedesP^{\interval{t}}(\symv{s}) 
 &\equiv  
-\exists \tuple{\facc{\symv{p}}{t}, \_} \in 
+\exists \symv{p} \in 
 \slice{\syms{P}}
 {\interval{\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}},
 	\facc{\symv{s}}{user}} :\ 
@@ -288,7 +342,7 @@ the resulting abstract filter:
 \begin{align*}
 &
 \PrecedesP^{\hashid{user}}(\symv{s}) \equiv 
-\exists\; \tuple{\facc{\symv{p}}{t}, \_} \in 
+\exists \symv{p} \in 
 \slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
 	\hashid{\facc{\symv{s}}{user}}} :\ 
@@ -955,18 +1009,35 @@ This can prove useful if one of the symbolic sets is known to be a subset of
 the other, thus one would need to build an abstract filter only for the smaller 
 one. 
 Moreover, considering that initial or final transitions typically have the 
-fewest number of matching events, one might choose to collect and abstract over 
-the symbolic sets of those transitions.
+fewest number of matching events, one might choose to only collect and abstract 
+over the symbolic sets of those transitions.
 Due to their low cardinality these sets are likely to have very high 
 filtering and the data abstractions used to enforce them can achieve higher
 precision for the same operating costs (considering the small number of values 
 to store and query).
-Applying this heuristic to our example from section\ref{sec:mot_example} wrt.\ 
-to the final transition P produces the following relaxed filters:
+Applying this heuristic to our example from section~\ref{sec:mot_example} wrt.\ 
+to the final transition P (as we expect to have relatively few purchasing 
+events) produces the following relaxed filters:
 \begin{align*}
-content...
+\heurs{S}(\symv{s}) 
+&\equiv  
+\slice{\syms{P}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
+	\facc{\symv{s}}{user}} 
+\neq \emptyset
+\\
+\heurs{\oR}(\symv{r}) 
+&\equiv
+\slice{\syms{P}}{(\facc{\symv{r}}{t}\,:\,\infty), \facc{\symv{r}}{user}}
+\neq \emptyset
+\\
+\heurs{P}(\symv{p}) 
+&\equiv \texttt{true},
 \end{align*}
-
+as obtained 
+from the definitions of $\precs{S}, \precs{\oR}$ and $\precs{P}$
+by replacing $\syms{S}$ with the full domain of time/user ids and  
+$\syms{\oR}$ with the empty set. 
 
 
 \subsection{Building filters through fixpoint}
