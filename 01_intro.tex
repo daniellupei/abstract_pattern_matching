@@ -17,7 +17,7 @@ wherein each transition contains an unary predicate and an optional join
 condition on a prior transition.  For example, a programmer might mine
 influential reviews within the click-stream of an e-commerce website consisting
 of events of type ``Search''(S), ``Read review''(R) and ``Purchase''(P) by
-expressing the pattern SR+P where each transition is joined on a userid (i.e.,
+expressing the pattern SR*P where each transition is joined on a userid (i.e.,
 to make sure that the matched events are correlated by the id of the user that
 performed them).
 
@@ -109,7 +109,7 @@ optimization of the entire pipeline.
 % constants), the idea behind {\em abstract pattern matching} is to also leverage 
 % the filtering power of the join predicates, as well as that of the dependencies 
 % captured by the pattern itself. 
-To gain an intuition for our approach, consider the earlier pattern SR+P for
+To gain an intuition for our approach, consider the earlier pattern SR*P for
 mining influential reviews.  Abstract pattern matching first builds three
 independent sets of user ids: a set of user ids for users that (S)earched for a
 product, a set of user ids for users that (R)ead at least one review, and a set
@@ -162,10 +162,10 @@ overhead of building our filters with their selectivity.
   %
   \begin{subfigure}{\columnwidth}
     \includegraphics[clip, page=2,width=\columnwidth]{graphs/motivation.pdf}
-    \caption{SR+P will only match those users that search, possibly read at
-      least one review, and finally, purchase a product.  Predicate abstraction
+    \caption{SR*P will only match those users that search, possibly read
+      some reviews, and finally, purchase a product.  Predicate abstraction
       exploits the selectivity of one predicate (most users do not purchase) to
-      efficiently over-approximate users that match SR+P.}
+      efficiently over-approximate users that match SR*P.}
     \label{fig:pabstraction}
   \end{subfigure}
 \end{figure}
