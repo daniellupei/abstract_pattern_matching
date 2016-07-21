@@ -25,10 +25,11 @@ the name of the event to be matched), as well as join predicates that make sure
 that the matched events are correlated by the id of the user that performed 
 them and that the ``Purchase'' event occurs within a timeout $t_{out}$ from the 
 ``Search'' event. 
+\begin{comment}
 In addition, figure~\ref{fig:srp_pattern} presents the symbolic automata 
 representation of the pattern, i.e.\ the state machine where each transition 
 has an associated event variable and a corresponding guard.
- 
+\end{comment}
 
 The typical execution plan of this task on a map-reduce framework is to first
 group all events by user id, then sort them on time and finally run a pattern
@@ -51,7 +52,7 @@ AND NOT EXISTS (
   SELECT * FROM Ev R
   WHERE S.time < R.time AND R.time < P.time
   AND R.user == S.user
-  AND R.name != "R"); 
+  AND R.name != "R" ); 
 \end{verbatim}
 }
 
@@ -181,7 +182,7 @@ emptiness test.
 (\facc{\symv{r}}{user} = \facc{\symv{s}}{user})
 \},
 \end{align*}
-\end{comment}
+
 
 
 \begin{figure}[t]
@@ -192,7 +193,7 @@ emptiness test.
 	\label{fig:srp_pattern}
 \end{figure}
 
-
+\end{comment}
 
 Towards our goal of removing events from the input that are guaranteed not to
 participate in a successful match,

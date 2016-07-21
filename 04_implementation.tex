@@ -5,7 +5,7 @@
 \centering
 \includegraphics[clip, trim=5.6cm 4.5cm 6.3cm 4.2cm, 
 width=0.45\textwidth]{graphs/query_plan.pdf}
-\caption{Naive (a) and optimized (b) execution plans for performing pattern 
+\caption{Naive (i) and optimized (ii) execution plans for performing pattern 
 matching on a map-reduce platform.}
 \label{fig:query_plan}
 \end{figure}
@@ -18,28 +18,30 @@ We recall that the standard way of performing event-series pattern matching in
 such frameworks is to first remove all the events that do not match any of the 
 selection predicates specified by the pattern, and then to sort on 
 time/reshuffle the remaining events and finally process them using a pattern 
-matching engine (see figure~\ref{fig:query_plan}a).
+matching engine (see figure~\ref{fig:query_plan}(i)).
 
 Our solution significantly extends the amount of data that gets filtered out 
-during the preprocessing stage by constructing {\em abstract} filters which 
-also enforce the join predicates occurring in a pattern (as opposed to just the 
-selection predicates).
-To do so, we first collect in a parallel fashion a symbolic/abstract (event) 
-set for each event variable of the pattern, then we union these sets across all 
-partitions of the input and we use them to build the abstract filters by 
-enforcing the join predicates between event variables. 
-We then broadcast the abstract filters back to the preprocessing nodes and have 
-them apply the abstract filters over the output of the initial 
-selection-predicate based filter. 
+during the preprocessing stage by constructing an {\em abstract} filter which 
+also enforces the join predicates occurring in a pattern (as opposed to just 
+the selection predicates).
+The execution plan that we propose introduces 3 intermediary steps as is 
+outlined in figure~\ref{fig:query_plan}(ii).
+The first one collects in a parallel fashion a symbolic set for each event 
+variable of the pattern (step 2a), followed by the union of these sets across 
+all partitions of the input, and the results are then used to build the 
+abstract filter by enforcing the join predicates between event variables (step 
+2b). 
+We then broadcast the abstract filter back to the preprocessing nodes and have 
+them apply it over the output of the initial selection-predicate based filter 
+(step 2c). 
 Finally, the remaining events are sorted/reshuffled, just like in the standard 
-approach and processed by the pattern matching engine. The entire execution 
-plan is outlined in figure~\ref{fig:query_plan}b.
+approach and processed by the pattern matching engine. 
 
 
-In implementing the execution plan in figure~\ref{fig:query_plan}b,
+In implementing the execution plan in figure~\ref{fig:query_plan}(ii),
 we make use as much as possible of the relational constructs and annotations 
 provided by the Scope query language in order to maximize the potential for 
-optimizations at the level of the entire data processing pipeline (for eg. we 
+optimizations at the level of the entire data processing pipeline (for eg., we 
 use native Scope to extract the event fields used in constructing the symbolic 
 sets as well as to apply the filters that we build).
 For operating with the set abstractions themselves we use the rich 
