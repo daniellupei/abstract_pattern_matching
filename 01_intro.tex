@@ -171,13 +171,14 @@ overhead of building our filters with their selectivity.
 \end{figure}
       
  
-Our approach is inspired by the concept of abstract interpretation.  In
-particular, the {\em abstract filter} constraints are the result of
+Our approach is inspired by the concept of abstract 
+interpretation~\cite{Cousot:1977,Graf:1997}.  
+In particular, the {\em abstract filter} constraints are the result of
 relaxing/coarsening in a conservative manner of the precise constraints enforced
 by the pattern regarding which events form successful matches.  This suggests
 future work can leverage the technique of abstract interpretation to optimize
 other user defined operators as well, (i.e.\ to derive abstract filters meant to
-remove from the input those tuples that are guaranteed no to contribute to an
+remove from the input those tuples that are guaranteed not to contribute to an
 output of interest).
 
 % abstract interpretation provides a template for how  this optimization can be 

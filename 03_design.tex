@@ -1012,9 +1012,9 @@ Moreover, considering that initial or final transitions typically have the
 fewest number of matching events, one might choose to only collect and abstract 
 over the symbolic sets of those transitions.
 Due to their low cardinality these sets are likely to have very high 
-filtering and the data abstractions used to enforce them can achieve higher
-precision for the same operating costs (considering the small number of values 
-to store and query).
+filtering power and the data abstractions used to enforce them can achieve 
+higher precision for the same operating costs (considering the small number of 
+values to store and query).
 Applying this heuristic to our example from section~\ref{sec:mot_example} wrt.\ 
 to the final transition P (as we expect to have relatively few purchasing 
 events) produces the following relaxed filters:
@@ -1038,15 +1038,17 @@ as obtained
 from the definitions of $\precs{S}, \precs{\oR}$ and $\precs{P}$
 by replacing $\syms{S}$ with the full domain of time/user ids and  
 $\syms{\oR}$ with the empty set. 
-
+By further applying data abstraction to these filters, we end up with a 
+relatively cheap way to dispose of a large number of the input events, 
+irrelevant to our pattern.  
 
 \subsection{Building filters through fixpoint}
 
 
-We remark that the abstract filters are not strictly tied to the ability to 
-express automata as relational queries, but that they can also be obtained for 
-an arbitrary automaton by using a fixpoint operator that keeps track of 
-provenance information.
+We remark that the abstract filters are not strictly tied to the  
+expressibility of automata as relational queries, but that they can also be 
+computed for an arbitrary automaton by using a fixpoint operator that keeps 
+track of provenance information.
 The fixpoint operator we consider assigns to the starting node the empty 
 sequence and then iteratively builds for every node of the automaton its 
 corresponding set of (partial) matches, until no more new matches are found. 
@@ -1056,19 +1058,21 @@ events are found within the symbolic set of $X$.
 The newly found matches then get added to the collection of matches 
 corresponding to $X$'s destination, and the process starts over.  
 Since we never remove partial matches we are guaranteed to reach a fixpoint.
-Whenever we add a new match to an accepting node, we also update the symbolic 
-filters of the transitions along the path followed by that match.
+Based on the complete matches collected by the accepting nodes, we also update 
+the abstract filter's components corresponding to the transitions along their 
+path.
 
 In designing the fixpoint operator we similarly make extensive use of sets and 
 set operators.
 In particular, the (partial) matches we compute for each node $i$ of the 
-automaton are represented as a series of sets, one for each transition that may 
-occur on a path from the start node to $i$.
-Then the symbolic filter for a specific transition can be obtained by unioning 
+automaton are represented as a sequence of sets, one for each transition that 
+may occur on a path from the start node to $i$.
+Then the abstract filter for a specific transition can be obtained by unioning 
 its corresponding set across all the accepting nodes.
 When deciding whether a partial match can be extended by triggering transition 
-$X$ we simply intersect the symbolic set of $X$ with the projection from the 
-partial match of all its fields that are joined in the guard of $X$.
+$X$, we simply intersect the symbolic set $\syms{X}$ with the projection from 
+the partial match of the corresponding join fields, i.e.\ those fields of 
+previously occurring transitions that are joined against $X$.
 If the result is empty then the extension is not possible, otherwise a new 
 partial match gets created whose corresponding set for transition $X$ is the 
 result of the intersection.   
