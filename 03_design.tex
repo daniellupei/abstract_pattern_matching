@@ -311,9 +311,9 @@ problem.
 
 
 Predicate abstraction encompasses a set of re-writings 
-that strengthen the filter by discarding those constraints that cannot be safely
+that relaxes the filter by discarding those constraints that cannot be safely
 or efficiently abstracted over.
-For instance, our filter could be strengthened into:
+For instance, our filter could be weakened into:
 \begin{align*}
 &
 \PrecedesPPP(\symv{s}) \equiv 
@@ -619,10 +619,9 @@ p_P\ .\ (\facc{SE}{t} < \facc{P}{t}) .
 Q_2\!=& Q_P
 \end{align*}
 
-\subsubsection{Translating multi-transition cycles}
-
-In order to translate to relational queries automata with multi-transition 
-cycles of fixed length ($\geq 1$), we first normalize them such that each cycle
+{\bf Translating multi-transition cycles} of fixed length 
+($\geq 1$) to relational queries
+requires that we first normalize them such that each cycle
 has a single starting node and a single ending node, and that the two coincide.
 A starting node for a cycle is defined as the destination of one of its 
 incoming edges, while an ending node is the source of one of its outgoing edges.
@@ -833,7 +832,7 @@ For instance, when abstracting over the precise filter $\precs{S}$ from the
 example in section~\ref{sec:mot_example}, we have to use over-approximating set 
 abstractions for $\syms{S}$, while the opposite is true for $\syms{\oR}$.
 While this is of no concern for set abstractions, like interval maps, which 
-support both, it does raise a challenge for abstractions based on hashing, like 
+support both, it does pose a challenge to abstractions based on hashing, like 
 Bloom filters, which can only provide over-approximations.
 
 
@@ -870,44 +869,44 @@ Now, we can safely use hashing to abstract over user ids as follows:
 \PrecedesPP^{\hashid{user}}(\symv{s}) \equiv 
 \\
 &\qquad
-\max_{u \in \hashid{user_S}}
-\min \{ 
-\facc{\symv{r}}{t} \mid 
-\tuple{\facc{\symv{r}}{t}, \_} \in 
-\slice{\syms{\oR}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
-	u} 
-\}
-\\
-&\qquad
-< 
-\min_{u \in \hashid{user_S}}
+\min_{u \in \hashid{\facc{s}{user}}}
 \min \{ 
 \facc{\symv{p}}{t} \mid 
 \tuple{\facc{\symv{p}}{t}, \_} \in 
 \slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
 	u}
+\}
+\\
+&\qquad
+< 
+\max_{u \in \hashid{\facc{s}{user}}}
+\min \{ 
+\facc{\symv{r}}{t} \mid 
+\tuple{\facc{\symv{r}}{t}, \_} \in 
+\slice{\syms{\oR}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
+	u} 
 \}.
 \end{align*}
 
-While for our example it was possible to come up with an alternative formulation
-of the filter, this may not always be the case. 
-And even in the cases where it is, the alternatives may be too expensive to
-materialize and query (for eg.\ evaluating $\PrecedesPP^{\hashid{user}}$ is
-clearly more costly than $\PrecedesP^{\interval{t}}$).
+While for this example it was possible to come up with an alternative 
+formulation of the precise filter, this may not always be the case. 
+And even if it is possible, the alternatives may be too expensive to
+materialize and query (for eg.\ evaluating $\PrecedesPP^{\hashid{user}}$ can 
+easily be more costly than $\PrecedesP^{\interval{t}}$).
 Therefore, in the next section we discuss how {\em predicate abstraction} can 
-mitigate these kinds of challenges.
+mitigate these kinds of issues.
 
 \subsection{Predicate abstraction}
 \label{sec:pred_abstraction}
 
 
-We propose {\em predicate abstraction}, ie.\ the technique of strengthening
+We propose {\em predicate abstraction}, ie.\ the technique of weakening
  the
-symbolic filters by discarding some of their predicates, as a way of
+precise filters by discarding some of their predicates, as a way of
  overcoming
-the challenges that can arise when turning symbolic filters into abstract 
+the challenges that can arise when turning them into abstract 
 filters.
 For example, it may happen that for some predicate types
 (for eg.\ $x.Contains(y)$, where $x$, $y$ are strings) we simply cannot
@@ -916,9 +915,12 @@ any data abstraction, and even for those that we can, materializing and
  querying
 those data abstractions might prove too expensive.
 
+
+
+
 Predicate abstraction is an essential component of our approach
 allowing us to strike the right balance between the data reduction that the
-symbolic filters provide on one hand, and the overheads introduced by their
+abstract filters provide on one hand, and the overheads introduced by their
 data abstractions on the other.
 For instance, we may choose to discard
 predicates that have very low selectivity, i.e.\ the reduction in input 
@@ -929,22 +931,48 @@ Similarly, one may turn to predicate abstraction when dealing with patterns
 a large number of join predicates or transitions, in order to mitigate the
 increased overheads incurred by their data abstractions.
 
-Considering that initial or final transitions typically have the fewest
-number of matching events, one might choose to generate filters that only
-consider the join predicates with respect to those transitions.
-Due to the low cardinality of the sets of events matching these transitions 
-the join predicates referencing them are likely to have very high 
-selectivity.
-Moreover, the data abstractions used to enforce them can achieve higher
-precision for the same operating costs.
 
+Given a join predicate $\theta(X.f, Y.f)$, the definition of precise filter 
+$\precs{X}(\symv{x})$ is bound to contain a corresponding slicing of $Y$'s 
+symbolic set as $\slice{\syms{Y}}{...,f}$. 
+Just like in the case of data abstraction, depending on whether predicate 
+$\theta$ appears in a negated sub-clause or not, its abstraction needs to be 
+under or over approximating, in order to preserve conservativeness.
+More precisely, we enforce the over-approximation of $\theta$ by assuming that 
+the $f$ dimension of $\syms{Y}$ is invariably the entire domain of $f$.
+Analogously, the under-approximation of $\theta$ leads to the assumption that 
+the $f$ dimension of $\syms{Y}$ is invariably void, which by consequence 
+reduces the entire $\syms{Y}$ to the empty set.
+In section~\ref{sec:mot_example}, it was the under-approximating abstraction of 
+predicate $\facc{S}{user} = \facc{R}{user}$ that produced the relaxed filter
+$\PrecedesPPP$, by turning $\syms{\oR}$ in $\PrecedesP$ to the empty set.  
+ 
+Finally, we remark that predicate abstraction need not be applied symmetrically,
+i.e.\ given join predicate $\theta(X.f, Y.f)$ one could choose to abstract over 
+$\syms{X}$'s $f$ dimension but not over the $f$ dimension of $\syms{Y}$, or 
+vice-versa.  
+This can prove useful if one of the symbolic sets is known to be a subset of 
+the other, thus one would need to build an abstract filter only for the smaller 
+one. 
+Moreover, considering that initial or final transitions typically have the 
+fewest number of matching events, one might choose to collect and abstract over 
+the symbolic sets of those transitions.
+Due to their low cardinality these sets are likely to have very high 
+filtering and the data abstractions used to enforce them can achieve higher
+precision for the same operating costs (considering the small number of values 
+to store and query).
+Applying this heuristic to our example from section\ref{sec:mot_example} wrt.\ 
+to the final transition P produces the following relaxed filters:
+\begin{align*}
+content...
+\end{align*}
 
 
 
 \subsection{Building filters through fixpoint}
 
 
-We remark that the symbolic filters are not strictly tied to the ability to 
+We remark that the abstract filters are not strictly tied to the ability to 
 express automata as relational queries, but that they can also be obtained for 
 an arbitrary automaton by using a fixpoint operator that keeps track of 
 provenance information.
