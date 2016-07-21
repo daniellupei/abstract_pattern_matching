@@ -537,12 +537,12 @@ transitions of the pattern.
 \subsection{From patterns to relational queries}
 
 To simplify the presentation we detail our approach on patterns specified as a 
-symbolic finite automata where each transition is annotated by an event 
+finite automata where each transition is annotated by an event 
 variable and a guard.
 Turning regular expressions-like patterns to automata is straightforward,
 and in many cases there is a direct mapping between the pattern's event 
 variables and the automaton's transitions.
-Figure~\ref{fig:serp_pattern} shows the symbolic automaton corresponding to the 
+Figure~\ref{fig:serp_pattern} shows the automaton corresponding to the 
 (S|E)R*P pattern, where S,R, and P, correspond to the same "Search", "Read 
 review" and "Purchase" events described in section~\ref{sec:mot_example}, and E 
 denotes the event of responding to a promotional email.
@@ -554,12 +554,12 @@ $E$ variable depending on the event that initiated the current match.
 	\centering
 	\includegraphics[clip, trim=0cm 10cm 0cm 3cm,width=\columnwidth]
 	{graphs/example_sm3.pdf}
-	\caption{Symbolic automata for the (S|E)R*P pattern.}
+	\caption{Automata for the (S|E)R*P pattern.}
 	\label{fig:serp_pattern}
 \end{figure}
 
 
-We formally define a symbolic finite automaton as $\cA = (S, T, s_{start}, C),$ 
+We formally define a finite automaton as $\cA = (S, T, s_{start}, C),$ 
 where $S$ is the set of states, $T$ is the set of transitions, $s_{start}$ is 
 the initial state and $C$ is the set of completion (accepting) states.
 Each transition is defined in terms of the tuple $(X, p_X, src, dst)$ where $X$ 
@@ -576,9 +576,9 @@ predicates.
 
 
 We remark that the translation to relational expressions is not limited only to 
-acyclic symbolic automata, but also to automata with cycles of fixed length, 
+acyclic automata, but also to automata with cycles of fixed length, 
 i.e.\ each iteration of the cycle has the same number of transitions.
-This class of symbolic automata is of particular importance as it covers the 
+This class of automata is of particular importance as it covers the 
 vast majority of patterns found in benchmarks and in industrial workloads.  
 
 
