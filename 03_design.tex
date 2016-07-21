@@ -2,7 +2,7 @@
 \section{Motivating example}
 \label{sec:mot_example}
 
-Let us consider an analytics task that mines influential reviews
+Consider an analytics task that mines influential reviews
 within the click-stream of an e-commerce website consisting of events of type
 ``Search''(S), ``Read review''(R) and ``Purchase''(P).
 The mining task is described in terms of the pattern SR*P, with each event 
@@ -64,37 +64,34 @@ place in between these two events.
 The final result of the query is a set of tuples, one per successful match,
 consisting of the initial and final event in the match.
 
-Since the number of purchase events P are bound to be much lower than the
-search or read review events, performing a broadcast join wrt.\ to the P events
-might prove to be the optimum execution plan for this pattern. We remark that
-once expressed as an SQL query such optimizations opportunities are dramatically
-easier to explore.
+% Since the number of purchase events P are likely to be much lower than the search
+% or read review events, performing a broadcast join wrt.\ to the P events might
+% prove to be the optimum execution plan for this pattern. One of the key insights
+% of this paper is that representing a pattern as a SQL query provides significant
+% query optimization opportunities.
 
+% The class of patterns that we can currently translate into SQL are those whose
+% automata have only cycles of constant length, ie. every repetition
+% within a particular cycle should consist of the same number of events. 
+% Note this class includes the overwhelming majority of patterns discussed
+% in the literature of complex event processing systems as well as encountered
+% within an industrial benchmark.
 
-
-The class of patterns that we can currently translate into SQL are those whose
-symbolic automata have only cycles of constant length, ie. every repetition
-within a particular cycle should consist of the same number of events. 
-We note that this class includes the overwhelming majority of patterns discussed
-in the literature of complex event processing systems as well as encountered
-within an industrial benchmark.
-
-While we acknowledge that for patterns with many transitions, whose
-corresponding queries involve many joins, the optimizer might find optimal the
-standard query plan based on the pattern matching engine,
-we argue that even in such cases one can still leverage the derived query to
-minimize the number of events that get grouped by and sorted before being fed to
-the pattern matching engine.
-Ideally, only the events that will end up as part of a successful match should
-undergo this process.
+% While we acknowledge that for patterns with many transitions, whose
+% corresponding queries involve many joins, the optimizer might find optimal the
+% standard query plan based on the pattern matching engine,
+% we argue that even in such cases one can still leverage the derived query to
+% minimize the number of events that get grouped by and sorted before being fed to
+% the pattern matching engine.
+% Ideally, only the events that will end up as part of a successful match should
+% undergo this process.
 In the following we discuss our approach for performing this pre-processing step
-in a time and space efficient manner.
-
+in a time and space efficient manner.  
 
 We start by defining for each event variable $X$ of the pattern a 
 {\em symbolic set} $\syms{X}$, which collects the values of $X$'s fields that 
 are joined by the query, based on the input events matching its selection 
-predicates.
+predicates. 
 \begin{align*}
 \syms{S} 
 &\coloneq 
@@ -195,14 +192,11 @@ emptiness test.
 
 \end{comment}
 
-Towards our goal of removing events from the input that are guaranteed not to
-participate in a successful match,
+Each symbolic set, in concert with the slice operator let us remove events from
+the input that are guaranteed not to participate in a successful match.
 % and as such minimize the number of events being sorted and considered by the 
 % pattern matcher, 
-we generate a {\em precise filter} for each variable in the pattern, that takes 
-into account the constraints imposed by the join predicates referencing that 
-variable. 
-For our example pattern we get the following filters:
+For this example pattern we get the following filters:
 \begin{align*}
 \precs{S}(\symv{s}) 
 &\equiv  
