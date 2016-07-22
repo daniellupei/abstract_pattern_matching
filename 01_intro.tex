@@ -8,19 +8,20 @@ domains ranging from network diagnostics and security breach detection, to
 algorithmic trading or click-path optimization.  This trend prompted the
 addition of pattern matching constructs to many batch and stream processing
 engines such as Esper's Event Processing Language (EPL)~\cite{esper_epl},
-Oracle's \texttt{MATCH\_RECOGNIZE}~\cite{oracle_mr}, TerraData's \texttt{nPath}
-operator~\cite{aster_npath} or Splunk's Search Processing
-Language~\cite{Carasso:2012}.
+Oracle's \texttt{MATCH\_RECOGNIZE}~\cite{oracle_mr} or TerraData's 
+\texttt{nPath} operator~\cite{aster_npath}.
+% or Splunk's Search Processing Language~\cite{Carasso:2012}.
 
-These languages let programmers express patterns as a series of transitions,
+These languages let programmers specify patterns as a series of transitions,
 wherein a transition 
-is triggered if the current event satisfies a guard expressed in terms of both 
-unary(selection) predicates as well as join conditions on priorly matched 
+is triggered if the current event satisfies a guard defined in terms of both 
+unary\allowbreak (selection) predicates as well as join conditions on 
+priorly matched 
 events. 
 For example, a programmer might mine
 influential reviews within the click-stream of an e-commerce website consisting
 of events of type ``Search''(S), ``Read review''(R) and ``Purchase''(P) by
-expressing the pattern SR*P where each transition is joined on a userid (i.e.,
+defining the pattern SR*P where each transition is joined on a userid (i.e.,
 to make sure that all events in a match are correlated by the id of the user 
 that performed them).
 
@@ -29,16 +30,15 @@ Pattern matching is usually only one of many stages in a data processing
 pipeline.  As most of these stages are defined using relational queries (for 
 eg., to enrich ingested data), the presence of pattern matching operators raises
 considerable challenges in terms of deriving optimum execution plans.  Pattern
-matching operators require their input should be ordered by time and in
-addition do not enjoy the same wealth of rewriting rules and optimization
-opportunities as traditional relational operators.  As a consequence, just
-getting data sorted often takes a significant amount of data center resources
-even if matching the patterns themselves is fast.
+matching operators do not enjoy the same wealth of rewriting rules and 
+optimization opportunities as traditional relational operators and in
+addition require that their input is ordered by time.  As a consequence, just
+sorting the data often takes a significant amount of processing resources
+even if matching the patterns themselves is relatively fast.
 
-Warehoused data is typically processed by a mix of workloads.  For
-example, such systems have to service both pattern mining and non-temporal 
-queries (i.e., in which city are located the most active visitors of a 
-website).  
+Warehoused data is typically processed by a mix of workloads which might 
+comprise of both pattern mining and non-temporal queries (i.e., in which city 
+are located the most active visitors of a website).  
 These non-temporal queries have very different optimum data layout and since 
 they are usually much more frequent, their optimum data layout ends up becoming 
 the layout of choice in the data center.  
@@ -51,13 +51,11 @@ each with varying constraints for when the data ingestion should happen.
 %(for eg. when mining the activity of a user on multiple devices)
 %That is why, before sorting the data and feeding
 % it to a pattern matching engine, an extra preprocessing step is commonly used 
-%%% to discard all the events that do not satisfy any of the selection 
-%%%predicates 
-% of the pattern.  
- Finally, we remark that the
- requirement that the input be ordered by time is especially taxing when
- executing on a map-reduce platform, as the sorting step incurs an expensive
- reshuffling of the entire data.
+% to discard all the events that do not satisfy any of the selection 
+% predicates of the pattern.  
+Finally, we remark that the requirement that the input be ordered by time is 
+especially taxing when executing on a map-reduce platform, as the sorting step 
+incurs an expensive reshuffling of the entire data.
 
 \begin{comment}
 Further, because data are collected from a wide array of
