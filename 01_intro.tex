@@ -29,24 +29,26 @@ Pattern matching is usually only one of many stages in a data processing
 pipeline.  As most of these stages are defined using relational queries (i.e.,
 to enrich ingested data), the presence of pattern matching operators raises
 considerable challenges in terms of deriving optimum execution plans.  Pattern
-matching operators require their input be should be sorted on time and in
+matching operators require their input should be ordered by time and in
 addition do not enjoy the same wealth of rewriting rules and optimization
 opportunities as traditional relational operators.  As a consequence, just
 getting data sorted often takes a significant amount of data center resources
 even if matching the patterns themselves is fast.
 
-Modern warehoused data is typically processed by a mix of workloads.  For
-example, such systems have to service non-temporal queries (i.e., in which city
-are located most of the last month's website visitors).  These non-temporal
-queries have very different optimum data layout, and as the latter kind are
+Warehoused data is typically processed by a mix of workloads.  For
+example, such systems have to service both pattern mining and non-temporal 
+queries (i.e., in which city are located the most active visitors of a 
+website).  
+These non-temporal queries have very different optimum data layout and since are
 usually much more frequent, their optimum data layout ends up becoming the
 layout of choice in the data center.  Keeping a second copy of the data sorted
-on time is wasteful when dealing with terabytes of data, especially in the light
-of the fact that many of the recorded events may not even be of interest to the
-mined pattern.  Further, because data are collected from a wide array of
+on time is wasteful when dealing with terabytes of data, especially when 
+considering that many of the recorded events may not even be of interest to the
+mined pattern. 
+Further, because data are collected from a wide array of
 sources, each with varying constraints on when data ingestion occurs, sorting
-the world for every pattern matching query is a frequent and costly occurrence
-in the datacenter.
+the world for every pattern matching query issued is a frequent and costly 
+occurrence in the datacenter.
 % That is why, before sorting the data and feeding
 % it to a pattern matching engine, an extra preprocessing step is commonly used to
 % discard all the events that do not satisfy any of the selection predicates of
