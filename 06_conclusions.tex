@@ -1,2 +1,45 @@
 \section{Conclusions and Future work}
 \label{sec:conclusions}
+
+Complex event processing and pattern matching is becoming commonplace in many 
+analytics workloads over increasingly larger datasets.
+Consequently, it has to be able to cope with a growing number of constraints 
+wrt.\ to the physical layout of the data as well as enable optimization 
+opportunities at the level of the entire processing pipeline.
+In our work, we translate a large class of commonly occurring patterns to 
+relational queries in order to take advantage of decades of progress in 
+relational optimizations.
+This is of particular importance, considering that most stages of data 
+analytics workloads are also relational. 
+In addition, we propose the technique of {\em abstract pattern matching} which 
+leverages the relational representation of patterns to derive an abstract 
+filter which discards those events guaranteed not to participate in a complete 
+match and we explore the tradeoff between the precision vs the accuracy of the 
+filter by designing set abstractions that efficiently represent the domain of 
+the join attributes in the pattern.
+Finally, we show that {\em abstract pattern matching} is effective in 
+dramatically reducing the amount of data that needs to be shuffled over the 
+network and processed by the pattern matching operator (from terabytes to 
+gigabytes), and thus provide significant speedups to the pattern mining task. 
+
+While we can currently translate to relational queries the vast majority of 
+complex event patterns encountered in the literature and in an industrial 
+benchmark, we would also like to formally define the largest class of patterns 
+for which such a translation is possible.
+
+The approach we took in designing {\em abstract pattern matching} can be 
+extended to optimize a large class of user-defined aggregates (UDA) that face  
+challenges wrt.\ to the physical layout of their input data similar to those of 
+pattern matching operators. 
+To do so, one has to first collect symbolic sets for the variables binding 
+input tuples, 
+and then refine them by propagating constraints while     
+interpreting the UDA on top of them.
+The symbolic sets that result from following paths that lead to successful 
+outputs can then be used to discard irrelevant tuples from the input.
+Abstraction, both in terms of UDA's interpretation as well as the 
+representation of sets, is bound to play a key role, just like it did in our 
+refinement from precise to abstract filters.
+
+
+
