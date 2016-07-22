@@ -149,7 +149,7 @@ the type of join constraints that we have to propagate for a particular
 transition, {\em data abstraction} makes use of appropriate abstract set
 representations that can conservatively approximate those constraints (for
 example, for equijoins we make use of Bloom filters\cite{Bloom:1970}, whereas
-for inequality/band joins we rely on interval maps).  (i.e., as in
+for inequality/band joins we rely on interval maps, as in
 Figure~\ref{fig:dabstraction}).  In addition, predicate abstraction further
 reduces the overheads of our approach by dropping in a sound way some of the
 transitions specified by the pattern.  For example, few users ultimately purchase
