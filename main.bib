@@ -101,9 +101,24 @@
 	numpages = {37},
 } 
 
-
+%
 %  distributed pattern matching
+%
 
+
+@inproceedings{Brenna:2009,
+	title={Distributed event stream processing with non-deterministic finite 
+	automata},
+	author={Brenna, Lars and Gehrke, Johannes and Hong, Mingsheng and Johansen, 
+	Dag},
+	booktitle={Proceedings of the Third ACM International Conference on 
+	Distributed Event-Based Systems},
+	pages={3},
+	year={2009},
+	organization={ACM}
+}
+
+% time window parallelization
 @Inbook{Leghari:2015,
 	author="Leghari, Ahmed Khan
 	and Wolf, Martin
@@ -116,6 +131,35 @@
 	pages="133--149",
 }
 
+% attribute key parallelization
+@inproceedings{Hirzel:2012,
+	author = {Hirzel, Martin},
+	title = {Partition and Compose: Parallel Complex Event Processing},
+	booktitle = {Proceedings of the 6th ACM International Conference on 
+	Distributed Event-Based Systems},
+	series = {DEBS '12},
+	year = {2012},
+	location = {Berlin, Germany},
+	pages = {191--200},
+	numpages = {10},
+} 
+
+% parallelization across partial-matches 
+@inproceedings{Balkesen:2013,
+	author = {Balkesen, Cagri and Dindar, Nihal and Wetter, Matthias and 
+	Tatbul, Nesime},
+	title = {RIP: Run-based Intra-query Parallelism for Scalable Complex Event 
+	Processing},
+	booktitle = {Proceedings of the 7th ACM International Conference on 
+	Distributed Event-based Systems},
+	series = {DEBS '13},
+	year = {2013},
+	location = {Arlington, Texas, USA},
+	pages = {3--14},
+	numpages = {12},
+} 
+
+% compute sub-subpatterns in parallel
 @article{Akdere:2008,
 	author = {Akdere, Mert and \c{C}etintemel, U\v{g}ur and Tatbul, Nesime},
 	title = {Plan-based Complex Event Detection Across Distributed Sources},
@@ -128,6 +172,7 @@
 	pages = {66--77},
 	numpages = {12},
 } 
+
 
 @inproceedings{Raychev:2015,
 	author = {Raychev, Veselin and Musuvathi, Madanlal and Mytkowicz, Todd},
@@ -168,9 +213,13 @@
 } 
 
 
+Sequence pattern query processing over out-of-order event streams
 
 
-% abstract interpretation + predicate abstraction
+
+
+
+% abstract interpretation + predicate abstraction + symbolic execution
 
 @inproceedings{Cousot:1977,
 	author = {Cousot, Patrick and Cousot, Radhia},
@@ -196,6 +245,16 @@
 	numpages = {12},
 } 
 
+@article{King:1976,
+	title={Symbolic execution and program testing},
+	author={King, James C},
+	journal={Communications of the ACM},
+	volume={19},
+	number={7},
+	pages={385--394},
+	year={1976},
+	publisher={ACM}
+}
 
 
 
@@ -253,6 +312,18 @@
 	year = {2012}, 
 	note = "[Online; accessed 14-July-2016]"
 }
+
+@misc{flink_cep,
+	title = {{FlinkCEP - Complex event processing for Flink}},
+	howpublished = 
+	"\url{https://ci.apache.org/projects/flink/flink-docs-master/apis/streaming/libs/cep.html}",
+	year = {2016}, 
+	note = "[Online; accessed 14-July-2016]"
+}
+
+
+
+
 
 @book{Carasso:2012,
 	author = {Carasso, David},

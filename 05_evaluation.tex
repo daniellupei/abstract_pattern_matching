@@ -154,20 +154,6 @@ filter.
 
 
 
-
-\begin{figure}[tp]
-\centering
-
-\includegraphics[clip, trim=0cm 3.8cm 0.3cm 3.2cm,
-width=\columnwidth]{graphs/A5_tradeoff.pdf}
-\caption{Tradeoff for query A5 between filter size (1024KB-8192KB) and data
-reduction for different filter configurations and with different granularities
-for the MainKey filter (65K,512K,2M).}
-\label{fig:tradeoff}
-\end{figure}
-
-
-
 \subsection{Abstract filter size vs reduction ratio}
 
 We vary the size of the abstract filter that we build as well as its
@@ -210,6 +196,21 @@ events and their associated secondary keys it needs to discriminate between.
 Notably, the Time component is less susceptible to this issue. 
 
 
+
+
+
+
+\begin{figure}[tp]
+	\centering
+	
+	\includegraphics[clip, trim=0cm 3.5cm 0.3cm 3.7cm,
+	width=\columnwidth]{graphs/A5_tradeoff.pdf}
+	\caption{Tradeoff for query A5 between filter size (1024KB-8192KB) and data
+		reduction for different filter configurations and with different 
+		granularities
+		for the MainKey filter (65K,512K,2M).}
+	\label{fig:tradeoff}
+\end{figure}
 
 \subsection{Total processing time speedup}
 
@@ -267,14 +268,14 @@ Main and Secondary Key filters manages to discard the largest number of events
 \centering
 
 \begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 3.5cm 0.9cm 3.5cm,
+\includegraphics[clip, trim=0.5cm 3.5cm 0.9cm 3.5cm,
 width=\columnwidth]{graphs/A5_breakdown.pdf}
 \caption{A5}
 \label{fig:A5}
 \end{subfigure}
 ~
 \begin{subfigure}[t]{\columnwidth}
-\includegraphics[clip, trim=0.8cm 4cm 0.9cm 4cm,
+\includegraphics[clip, trim=0.5cm 4cm 0.9cm 4cm,
 width=\columnwidth]{graphs/A3_breakdown.pdf}
 \caption{A3}
 \label{fig:A3}

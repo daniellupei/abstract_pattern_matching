@@ -2,26 +2,109 @@
 \label{sec:rel_work}
 
 Complex event processing has received extensive interest in the 
-literature~\cite{SASE:2008,Akdere:2008,Brenna:2007,Cadonna:2011,Cadonna:2012,
-	Demers:2007,Johnson:2007,Leghari:2015,Li:2007,Sadri:2004,SASE:2014,
-	Raychev:2015} and 
+literature~\cite{SASE:2008,SASE:2014,
+	Brenna:2007,Demers:2007,Brenna:2009,	
+	Cadonna:2011} and 
 has enjoyed similarly wide adoption in 
-industry~\cite{esper_epl,oracle_mr,aster_npath,Carasso:2012},
+industry~\cite{esper_epl,oracle_mr,aster_npath,Carasso:2012,flink_cep},
 with most of the work focused on online (near-real time) systems designed to 
 deliver extremely low response times for mission-critical tasks (for eg., 
 blocking a credit card upon detecting fraudulent activity). 
-However, as the volume of data that needs to be processed continues to grow, 
-online systems experience scalability issues considering that the 
-pattern matching logic is typically implemented in a sequential manner.  
+However, 
+these systems experience scalability issues 
+as the volume of data that needs to be processed continues to grow
+and considering that the pattern matching logic is typically implemented in a 
+sequential manner.  
+Moreover, the optimizations that they deploy focus primarily on computation 
+reuse and sharing~\cite{Sadri:2004}, and thus are not appropriate for 
+addressing the demand for more parallelism.
 
+In dealing with the increase in load, most systems dismiss, as early as 
+possible, 
+of all the input events that fail to satisfy the selection predicates 
+of at least one of the variables in a given pattern.
+A more aggressive \textbf{preprocessing} step has been proposed by Cadonna et.\ 
+al.\cite{Cadonna:2012}, which leverages both the structure of the pattern and 
+the guards of its variables to formulate a set of necessary conditions for a 
+window of events to contain a complete match.
+If a particular window fails to meet those conditions its can be ignored, thus 
+completely sidestepping the pattern matcher.
+While their proposal targets only patterns specified as {\em sequenced event 
+sets}~\cite{Cadonna:2011}, we support arbitrary automata, and for a large 
+class we derive both necessary and sufficient (i.e.\ precise) conditions for 
+identifying complete matches.
+More importantly, we discuss how the precision of these filters can be traded 
+in favor of low overheads by proposing {\em data and predicate} abstractions, 
+and we showcase their ability to minimize data shuffling  
+when performing pattern matching over a map-reduce framework.    
+ 
 
 %(*) Distributed pattern matching
+Solutions for \textbf{distributed/parallel pattern matching} have focused 
+mainly on three directions:
+a)
+partitioning the input, either by time windows~\cite{Leghari:2015} or key 
+attributes~\cite{Hirzel:2012}, and then processing each partition  
+sequentially,
+b) 
+partitioning the pattern via query plans~\cite{Akdere:2008} that produce the 
+output from 
+progressively larger sub-patterns and 
+where the intermediary results are mined on distinct processing nodes,
+and 
+c)
+partitioning the set of partial matches/runs that need to be explored at any 
+given time~\cite{Balkesen:2013}.  
+The first approach is vulnerable to data skew, in case of large time windows or 
+attribute keys with few distinct values, 
+while the second one does not support the Kleene star.
+More importantly, all of them target only the pattern matching process 
+itself and disregard the communication costs incurred when the analysis is 
+performed on a map-reduce platform.
+By contrast,
+our technique of {\em abstract pattern matching}
+limits the number of events that need to be considered by the pattern 
+matching operator in the first place, and as such can even be used in 
+conjunction with the proposals described above.
+Moreover,
+in our work we expose the inherent parallelism of patterns by expressing them 
+in terms of embarrassingly parallel relational operators.  
 
-%(*) Pattern matching over out-of-order event series.
+Symbolic execution~\cite{King:1976} has been proposed as a way to speedup 
+ user-defined aggregates~\cite{Raychev:2015}, and in particular 
+pattern matching routines executing within the reduce stages of map-reduce 
+workloads.    
+The user defined aggregate is symbolically evaluated on each 
+partition of the input and only the symbolic summary of the 
+execution is submitted  to the reducer. 
+The reducer can then determine the final result based on the collected symbolic 
+summaries. 
+This approach ends up shuffling in many cases significantly less data between 
+mappers and reducers as the symbolic summaries are typically much smaller than 
+the original input.
+However, as it requires that the data be already ordered by time, it is not 
+applicable to the common scenario where workload wide considerations impose a 
+different physical layout for the input data.  
+Moreover, even if the ordering constraint on the input holds, this approach can 
+still leverage {\em abstract pattern matching} to address
+the pathological scenarios when the symbolic summaries are just as large as the 
+original input, as it would allow it to more accurately prune unfeasible paths 
+based on a global view of the domain of join attributes. 
 
 
-%(*) Stream processing engines optimizations
 
-%(*) Pattern matching algorithms optimizations
+Proposals for coping with {\bf out-of-order event series} have 
+primarily focused on buffering mechanisms and
+ efficiently updating the internal structures of the pattern matcher in 
+ response to events arriving late~\cite{Johnson:2007,Li:2007}.
+Since they operate under the assumption that misplaced events are relatively 
+rare (i.e.\ the input stream is mostly ordered),
+use time thresholds beyond which delayed events are simply ignored,
+and rely on a complete view of the input, they cannot mitigate the expensive 
+data shuffling that precedes pattern matching on map-reduce platforms.   
+ 
+
 
 %(*) Multiway join / semi-join optimizations
+
+
