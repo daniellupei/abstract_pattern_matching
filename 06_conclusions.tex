@@ -14,9 +14,9 @@ analytics workloads are also relational.
 In addition, we propose the technique of {\em abstract pattern matching} which 
 leverages the relational representation of patterns to derive an abstract 
 filter which discards those events guaranteed not to participate in a complete 
-match and we explore the tradeoff between the precision vs the accuracy of the 
-filter by designing set abstractions that efficiently represent the domain of 
-the join attributes in the pattern.
+match and we explore the tradeoff between the accuracy vs the operating cost of 
+the filter by designing set abstractions that efficiently represent the domain 
+of the join attributes in the pattern.
 Finally, we show that {\em abstract pattern matching} is effective in 
 dramatically reducing the amount of data that needs to be shuffled over the 
 network and processed by the pattern matching operator (from terabytes to 

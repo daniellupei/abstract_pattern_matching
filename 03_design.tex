@@ -435,16 +435,16 @@ Alternatively, one can re-write the precise filter using min aggregates:
 \PrecedesPP(\symv{s}) \equiv 
 \min \{ 
 \facc{\symv{p}}{t} \mid 
-\tuple{\facc{\symv{p}}{t}, \_} \in 
+\symv{p} \in 
 \slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
 	\facc{\symv{s}}{user}}
 \}
 \\
-&\qquad
+&\qquad\;\;\,
 < \min \{ 
 \facc{\symv{r}}{t} \mid 
-\tuple{\facc{\symv{r}}{t}, \_} \in 
+\symv{r} \in 
 \slice{\syms{\oR}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
 	\facc{\symv{s}}{user}} 
@@ -457,11 +457,11 @@ Now, we can safely use hashing to abstract over user ids as follows:
 &
 \PrecedesPP^{\hashid{user}}(\symv{s}) \equiv 
 \\
-&\qquad
+&\qquad\;\;\;\,
 \min_{u \in \hashid{\facc{s}{user}}}
 \min \{ 
 \facc{\symv{p}}{t} \mid 
-\tuple{\facc{\symv{p}}{t}, \_} \in 
+\symv{p} \in 
 \slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
 	u}
@@ -472,7 +472,7 @@ Now, we can safely use hashing to abstract over user ids as follows:
 \max_{u \in \hashid{\facc{s}{user}}}
 \min \{ 
 \facc{\symv{r}}{t} \mid 
-\tuple{\facc{\symv{r}}{t}, \_} \in 
+\symv{r} \in 
 \slice{\syms{\oR}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),\; 
 	u} 

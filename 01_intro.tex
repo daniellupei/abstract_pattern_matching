@@ -177,9 +177,9 @@ In particular, the {\em abstract filter} constraints are the result of
 relaxing/coarsening in a conservative manner of the precise constraints enforced
 by the pattern regarding which events form successful matches.  This suggests
 future work can leverage the technique of abstract interpretation to optimize
-other user defined operators as well, (i.e.\ to derive abstract filters meant to
-remove from the input those tuples that are guaranteed not to contribute to an
-output of interest).
+other user defined aggregates as well, (i.e.\ to derive abstract filters meant 
+to remove from the input those tuples that are guaranteed not to contribute to 
+an output of interest).
 
 % abstract interpretation provides a template for how  this optimization can be 
 %extended to other udf running in the reducer stages of a map-reduce pipeline 
@@ -206,9 +206,12 @@ The contributions of this paper are:
 	\item We introduce the technique of {\em abstract pattern matching} in 
 	order to minimize the sorting/shuffling costs of large scale mining of 
 	patterns within map-reduce frameworks.
-	\item We highlight how the concepts of symbolic execution and abstract 
-	interpretation can be used to design similar optimizations for other 
-	user-defined reduce operators.
+	\item We design {\em data and predicate abstractions} that allow us to 
+	trade the precision of our approach (but not its soundness) for lower 
+	overheads.
+	%\item We highlight how the concepts of symbolic execution and abstract 
+	%interpretation can be used to design similar optimizations for other 
+	%user-defined reduce operators.
 	\item We prototype our solution and show on an industrial benchmark that 
 	it delivers significant reductions in the amount of data sorted/shuffled as 
 	well as processing times.  
@@ -275,7 +278,7 @@ by taking advantage of the fact that a large class of patterns can be
 equivalently expressed as SQL queries.
 By doing so then one can leverage decades of progress in query optimization to
 come up with more efficient query plans than the one outlined above.
-For instance, one can express our example pattern as a SQL query as follows:
+For instance, we can express our example pattern as a SQL query as follows:
 {\small
 	\begin{verbatim}
 	SELECT S.*, P.*
