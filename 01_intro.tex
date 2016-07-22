@@ -12,14 +12,17 @@ Oracle's \texttt{MATCH\_RECOGNIZE}~\cite{oracle_mr}, TerraData's \texttt{nPath}
 operator~\cite{aster_npath} or Splunk's Search Processing
 Language~\cite{Carasso:2012}.
 
-These languages let programmers express patterns as a series of transitions
-wherein each transition contains an unary predicate and an optional join
-condition on a prior transition.  For example, a programmer might mine
+These languages let programmers express patterns as a series of transitions,
+wherein a transition 
+is triggered if the current event satisfies a guard expressed in terms of both 
+unary(selection) predicates as well as join conditions on priorly matched 
+events. 
+For example, a programmer might mine
 influential reviews within the click-stream of an e-commerce website consisting
 of events of type ``Search''(S), ``Read review''(R) and ``Purchase''(P) by
 expressing the pattern SR*P where each transition is joined on a userid (i.e.,
-to make sure that the matched events are correlated by the id of the user that
-performed them).
+to make sure that all events in a match are correlated by the id of the user 
+that performed them).
 
 %(Challenges)
 Pattern matching is usually only one of many stages in a data processing
@@ -168,6 +171,8 @@ overhead of building our filters with their selectivity.
       efficiently over-approximate users that match SR*P.}
     \label{fig:pabstraction}
   \end{subfigure}
+  \caption{Examples illustrating the core intuitions underlying data and 
+  predicate abstraction.}
 \end{figure}
       
  
