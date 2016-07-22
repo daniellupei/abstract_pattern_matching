@@ -26,8 +26,8 @@ that performed them).
 
 %(Challenges)
 Pattern matching is usually only one of many stages in a data processing
-pipeline.  As most of these stages are defined using relational queries (i.e.,
-to enrich ingested data), the presence of pattern matching operators raises
+pipeline.  As most of these stages are defined using relational queries (for 
+eg., to enrich ingested data), the presence of pattern matching operators raises
 considerable challenges in terms of deriving optimum execution plans.  Pattern
 matching operators require their input should be ordered by time and in
 addition do not enjoy the same wealth of rewriting rules and optimization
@@ -168,7 +168,8 @@ overhead of building our filters with their selectivity.
     \vspace{-0.5cm}
     \includegraphics[clip, page=1,width=\columnwidth]{graphs/motivation.pdf}
     \vspace{-3.5cm}
-    \caption{Intervals are a compact over-approximation of users that search.}
+    \caption{Intervals are a compact over-approximation of the timestamps of 
+    searches.}
     \label{fig:dabstraction}
   \end{subfigure}
   %
