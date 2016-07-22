@@ -46,12 +46,12 @@
 \label{sec:evaluation}
 
 We tested our approach on 2 workloads:
-i) Asimov, consisting of 15 patterns (A1-15) matched over telemetry events
-collected within a 2 hours interval by the Asimov system, and 
+i) an internal Microsoft production system, consisting of 15 patterns (A1-15) matched over telemetry events
+collected within a 2 hour interval, and 
 ii) GitHub, performing repository analytics (patterns G1-3) over the GitHub
 dataset consisting of events collected over a 5 years period.
 All transitions in a pattern have a main key constraint, i.e.\ all events in a
-match should belong to the same device for the Asimov workload, or the same
+match should belong to the same join condition for the Microsoft workload, or the same
 repository for the GitHub patterns, and a time constraint, i.e.\ all events 
 considered should occur within a timeout from the initial event in the match.
 In addition, 9 patterns also have a secondary key constraint between some of
@@ -79,6 +79,10 @@ figure~\ref{tab:workload}.
 Finally, we use query A5 to highlight the individual filtering potential
 of different join predicates, as well as their sensitivity wrt.\ the amount of
 state dedicated to their abstract representation.
+
+Note that we also do not measure the cost to run the pattern matching engine and
+so our overall system processing time and latency numbers are conservative
+estimates of a production installation of our system.
 
 \begin{figure}[t!]
 \centering
@@ -113,7 +117,7 @@ abstract filters wrt.\ the corresponding baseline measures.}
 
 In order to establish the raw potential of our approach we look at the amount of
 data that is discarded by the abstract filters that we build.
-We note that the baseline consists only of events whose type matches the event
+The baseline consists only of events whose type matches the event
 type of a transition in the query.
 
 Figure~\ref{fig:data_red} shows on a logarithmic scale the ratio between the
@@ -237,7 +241,7 @@ iii) reduce the symbolic state associated to each transition down to an abstract
 filter for the entire query and broadcast it back to every mapper,
 iv) filter the input events based on the abstract filter, and
 v) perform the reduction step over the remaining events. 
-We remark, that for both the baseline and our approach, the final reduction 
+For both the baseline and our approach, the final reduction 
 step just collects the events from the mappers, but does not perform the 
 pattern matching.
 We made this choice in order to asses our solution independent
@@ -259,7 +263,7 @@ consider only the smallest/cheapest set of predicates able to filter the input
 down to the order of gigabytes/tens of gigabytes.
 
 
-In particular we remark that the additional reduction in data provided by the
+In particular the additional reduction in data provided by the
 Time filter for query A5 does not translate in lower processing time (see
 figure~\ref{fig:A5}).
 This happens because the default MainKey filter already drastically reduces
