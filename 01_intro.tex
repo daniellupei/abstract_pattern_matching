@@ -253,14 +253,19 @@ comments on future directions.
 
 
 
-
-
 \section{Motivating example}
 \label{sec:mot_example}
 
 Consider an analytics task that mines influential reviews
 within the click-stream of an e-commerce website consisting of events of type
-``Search''(S), ``Read review''(R) and ``Purchase''(P).
+``Search''(S), ``Read review''(R) and ``Purchase''(P). 
+The mining task is informally described in terms of the pattern
+SR*P. In other words, we desire a user interation where the user
+searched for an item, read a sequence of reviews, before deciding to
+purchase. In particular, we want the user to perform no other actions
+between the search and purchase actions. 
+
+\begin{comment}
 The mining task is described in terms of the pattern SR*P, with each event 
 variable annotated by its own guard:
 \begin{align*}
@@ -281,7 +286,6 @@ the name of the event to be matched), as well as join predicates that make sure
 that the matched events are correlated by the id of the user that performed 
 them and that the ``Purchase'' event occurs within a timeout $t_{out}$ from the 
 ``Search'' event. 
-\begin{comment}
 In addition, figure~\ref{fig:srp_pattern} presents the symbolic automata 
 representation of the pattern, i.e.\ the state machine where each transition 
 has an associated event variable and a corresponding guard.
@@ -305,10 +309,10 @@ For instance, we can express our example pattern as a SQL query as follows:
 	AND P.name == "P" AND P.time < S.time + t_out
 	AND P.user == S.user
 	AND NOT EXISTS ( 
-	SELECT * FROM Ev R
-	WHERE S.time < R.time AND R.time < P.time
-	AND R.user == S.user
-	AND R.name != "R" ); 
+	SELECT * FROM Ev NR
+	WHERE S.time < NR.time AND NR.time < P.time
+	AND NR.user == S.user
+	AND NR.name != "R" ); 
 	\end{verbatim}
 }
 
@@ -361,8 +365,8 @@ S \in \Ev: \facc{S}{name} = \text{``S''}
 \\
 \syms{\oR} 
 &\coloneq 
-\{ \tuple{\facc{R}{t}, \facc{R}{user}} \mid 
-R \in \Ev: \facc{R}{name} \neq \text{``R''}
+\{ \tuple{\facc{NR}{t}, \facc{NR}{user}} \mid 
+NR \in \Ev: \facc{NR}{name} \neq \text{``R''}
 \}
 \\
 \syms{P} 
@@ -371,8 +375,19 @@ R \in \Ev: \facc{R}{name} \neq \text{``R''}
 P \in \Ev: \facc{P}{name} = \text{``P''}
 \}
 \end{align*}
-We also re-write the query, first using comprehension syntax, 
-and then using a slicing operator:
+We introduce a temporal slicing operator that simplifies our
+notation. Given a set $S$ of tuples $\tuple{s_1,s_2,\ldots,s_n}$ and
+unary predications $\phi_1, \phi_2, \ldots, \phi_n$, we define the
+slicing operator:
+$$\slice{S}{\phi_1, \phi_2, \ldots, \phi_n} =
+\{\tuple{s_1,s_2,\ldots,s_n} \mid \bigwedge_{i=1}^{n}\phi_i(s_i)\}
+$$ 
+We will also represent $u_=(t)$ for the unary predicate that determines if
+$t$ is equal to $u$, and $(l,u)_\in(t)$ for the unary predicate that
+determines if $t$ is in the (open) time interval $(l,u)$.
+
+Now, We re-write the query, first using comprehension syntax, 
+and then using the slicing operator:
 \begin{align*}
 &
 Q \coloneq 
@@ -389,9 +404,9 @@ Q \coloneq
 &\qqquad\quad\;\;
 \neg
 (\exists
-\symv{r} \in \syms{\oR} : 
-\facc{\symv{r}}{t} \in (\facc{\symv{s}}{t} : \facc{\symv{p}}{t})\ .\ 
-(\facc{\symv{r}}{user} = \facc{\symv{s}}{user})
+\symv{nr} \in \syms{\oR} : 
+\facc{\symv{nr}}{t} \in (\facc{\symv{s}}{t} : \facc{\symv{p}}{t})\ .\ 
+(\facc{\symv{nr}}{user} = \facc{\symv{s}}{user})
 )
 \ \}
 \\
@@ -401,16 +416,17 @@ Q \coloneq
 \symv{s} \in \syms{S},
 \symv{p} \in 
 \slice{\syms{P}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
-	\facc{\symv{s}}{user}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out})_\in,
+	\facc{\symv{s}}{user}_=}
 : 
 \\ 
 &\qqquad\quad\;\;
 \slice{\syms{\oR}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}} 
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t})_\in,\; \facc{\symv{s}}{user}_=} 
 = \emptyset  
 \ \}
 \end{align*}
+\begin{comment}
 where 
 $\slice{\syms{P}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
@@ -429,7 +445,7 @@ $\slice{\syms{\oR}}
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}}$,
 with the latter allowing us to express the \texttt{NOT EXISTS} sub-clause as an 
 emptiness test.
-
+\end{comment}
 
 \begin{comment}
 \begin{align*}
@@ -462,38 +478,38 @@ For this example pattern we get the following filters:
 &\equiv  
 \exists \symv{p} \in 
 \slice{\syms{P}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out}),
-	\facc{\symv{s}}{user}} :\ 
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{s}}{t} + t_{out})_\in,
+	\facc{\symv{s}}{user}_=} :\ 
 \\
 &\qquad\quad
 \slice{\syms{\oR}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{s}}{user}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t})_\in,\; \facc{\symv{s}}{user}_=}
 = \emptyset 
 \\
 \precs{\oR}(\symv{r}) 
 &\equiv
 \slice{Q}
-{(-\infty\,:\,\facc{\symv{r}}{t}), 
-	\facc{\symv{r}}{user}, 
-	(\facc{\symv{r}}{t}\,:\,\infty), 
-	\facc{\symv{r}}{user}} 
+{(-\infty\,:\,\facc{\symv{r}}{t})_\in, 
+	\facc{\symv{r}}{user}_=, 
+	(\facc{\symv{r}}{t}\,:\,\infty)_\in, 
+	\facc{\symv{r}}{user}_=} 
 \neq \emptyset 
 \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 &\equiv
 \exists \symv{s} \in 
-\slice{\syms{S}}{(-\infty\,:\,\facc{\symv{r}}{t}), \facc{\symv{r}}{user}},
+\slice{\syms{S}}{(-\infty\,:\,\facc{\symv{r}}{t})_\in, \facc{\symv{r}}{user}_=},
 \\
 &\quad
 \exists \symv{p} \in 
 \slice{\syms{P}}
-{(\max(\facc{\symv{s}}{t},\facc{\symv{r}}{t})\,:\,\facc{\symv{s}}{t} + t_{out}),
-	\facc{\symv{r}}{user}}
+{(\max(\facc{\symv{s}}{t},\facc{\symv{r}}{t})\,:\,\facc{\symv{s}}{t} + t_{out})_\in,
+	\facc{\symv{r}}{user}_=}
 : 
 \\ 
 &\qquad\quad
 \slice{\syms{\oR}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{r}}{user}} 
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t})_\in,\; \facc{\symv{r}}{user}_=} 
 = \emptyset  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \\
@@ -501,12 +517,12 @@ For this example pattern we get the following filters:
 &\equiv  
 \exists \symv{s} \in 
 \slice{\syms{S}}
-{(\facc{\symv{p}}{t} - t_{out}\,:\,\facc{\symv{p}}{t}),  
-	\facc{\symv{p}}{user}} :\
+{(\facc{\symv{p}}{t} - t_{out}\,:\,\facc{\symv{p}}{t})_\in,  
+	\facc{\symv{p}}{user}_=} :\
 \\
 &\qquad\quad
 \slice{\syms{\oR}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t}),\; \facc{\symv{p}}{user}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t})_\in,\; \facc{\symv{p}}{user}_=}
 = \emptyset,
 \end{align*}
 which when applied to their corresponding symbolic set will retain only those 
