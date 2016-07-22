@@ -63,7 +63,8 @@ In particular, queries A10 and A15 apply the Kleene star over a sub-pattern as
 opposed to a single query variable.
 
 
-
+We experimented on a virtual cluster consisting of 85 nodes as part of the 
+Cosmos~\cite{Chaiken:2008} infrastructure.
 We assess the benefits provided by our approach in terms of 
 the ratio of input events vs selected events, 
 the total execution time across the processing nodes of the cluster,
@@ -236,6 +237,16 @@ iii) reduce the symbolic state associated to each transition down to an abstract
 filter for the entire query and broadcast it back to every mapper,
 iv) filter the input events based on the abstract filter, and
 v) perform the reduction step over the remaining events. 
+We remark, that for both the baseline and our approach, the final reduction 
+step just collects the events from the mappers, but does not perform the 
+pattern matching.
+We made this choice in order to asses our solution independent
+from a particular implementation of the pattern matching operator
+and to underscore the fact that any of the existing complex event processing 
+systems could benefit from our approach.
+Moreover, as the cost of pattern matching is typically proportional to the size 
+of the input, taking it into consideration would more negatively impact the 
+baseline approach than ours. 
 
 By discarding some of the input events our solution cuts the cost
 of the sorting and reduction phases when compared to the baseline approach,

@@ -153,18 +153,21 @@ In concert, data and predicate abstraction allow us to cope with join predicates
 that do not have efficient data abstractions, as well as fine-tune our solution
 such that it only considers the most selective join predicates and balance the
 overhead of building our filters with their selectivity.
-\begin{figure}
+\begin{figure}[t]
   \centering
   \begin{subfigure}{\columnwidth}
     \centering    
+    \vspace{-0.5cm}
     \includegraphics[clip, page=1,width=\columnwidth]{graphs/motivation.pdf}
-    \vspace{-3cm}
+    \vspace{-3.5cm}
     \caption{Intervals are a compact over-approximation of users that search.}
     \label{fig:dabstraction}
   \end{subfigure}
   %
   \begin{subfigure}{\columnwidth}
+    \vspace{-0.5cm}
     \includegraphics[clip, page=2,width=\columnwidth]{graphs/motivation.pdf}
+    \vspace{-2.5cm}
     \caption{SR*P will only match those users that search, possibly read
       some reviews, and finally, purchase a product.  Predicate abstraction
       exploits the selectivity of one predicate (most users do not purchase) to
