@@ -29,23 +29,24 @@ In our work we extend the opportunities for query plan optimizations across all
 the stages of the workload, beyond just pipelining the preprocessing phase of 
 the pattern matcher, by leveraging the fact that a large class of patterns can 
 be equivalently expressed as relational queries.
-Whenever that is not the case we can narrow the scope of our optimizations to 
+Whenever that is not the case we can soundly narrow the scope (i.e., through conservative predicate abstraction) of our optimizations to 
 the sub-patterns that do.
 The resulting relational expressions can then be optimized within the scope of 
 the entire (predominantly relational) workload based on decades of progress in 
 relational optimizations.  
 
 
-Even in the scenarios where the relational optimizer decides that using the 
-pattern matcher leads to the most efficient query plan, we can leverage the 
-relational expressions to generate a {\em precise filter} which retains only 
-those input events that appear within a complete match. 
-It achieves that by fully exploiting the pattern's structure along with its 
-{\em join} predicates, as opposed to just the {\em selection} predicates.   
-Applying the precise filter as part of the preprocessing step leads to a 
-dramatic improvement in its reduction ratio. 
-This is unsurprising considering that the number of events forming complete 
-matches is usually tiny compared to the input stream's size.
+Even in the scenarios where the relational optimizer decides that using the
+pattern matcher leads to the most efficient query plan, we can leverage the
+relational expressions to generate a {\em precise filter} which retains only
+those input events that appear within a complete match.  It achieves that by
+fully exploiting the pattern's structure along with its {\em join} predicates
+(i.e., user ids in our motivating example), as opposed to just the {\em
+  selection} predicates (i.e., the unary transition predicates).  Applying the
+precise filter as part of the preprocessing step leads to a dramatic improvement
+in its reduction ratio.  This is unsurprising considering that the number of
+events forming complete matches is usually tiny compared to the input stream's
+size.
  
 
 However in many cases the precise filter would be too expensive to build and 
@@ -60,7 +61,6 @@ not to take part in a successful match and significantly reduce the amount of
 data fed into the pattern matcher.
 We explore the trade-offs between the overheads incurred in building/querying
 the filter and its accuracy. 
-
 
 The derivation of abstract filters is not strictly tied to the ability to 
 generate a semantically equivalent relational expression for a pattern. 
@@ -119,7 +119,7 @@ In particular, the guards of start transitions can only use selection
 predicates.  
 
 
-We remark that the translation to relational expressions is not limited only to 
+The translation to relational expressions are not limited to 
 acyclic automata, but also to automata with cycles of fixed length, 
 i.e.\ each iteration of the cycle has the same number of transitions.
 This class of automata is of particular importance as it covers the 
@@ -214,7 +214,7 @@ requires that we first normalize them such that each cycle
 has a single starting node and a single ending node, and that the two coincide.
 A starting node for a cycle is defined as the destination of one of its 
 incoming edges, while an ending node is the source of one of its outgoing edges.
-We remark, that cycles of fixed length cannot have transversal edges (paths), 
+Cycles of fixed length cannot have transversal edges (paths), 
 i.e.\ edges (paths) that connect non-adjacent nodes in the cycle, as this would 
 violate the restriction that each of the cycle's iterations has the same length.
 
@@ -228,7 +228,7 @@ node in the newly created path, resulting in a cycle whose incoming and
 outgoing edges have the same node as destination and source, respectively.
 By applying this procedure to every cycle with multiple starting and ending 
 nodes we obtain a normalized automaton.  
-We remark that, while the resulting automaton may have multiple cycles starting 
+While the resulting automaton may have multiple cycles starting 
 and ending with the same node, all of those must also have the same length.
 
 
@@ -319,7 +319,7 @@ and destination, selects from the input those events that occur within interval
 $(t_Z, t_W)$, where $t_Z, t_W$, are the timestamps of a pair of event variables 
 $Z, W$, from the output of $Q_{\cA}$ such that $Z, W$ are associated to 
 non-cycle transitions entering and respectively exiting $k$.
-We note that $\precs{Y}$ does not need to enforce the guard $p_Y$ as it is 
+$\precs{Y}$ does not need to enforce the guard $p_Y$ as it is 
 guaranteed
 that all events between $t_Z$ and $t_W$ satisfy $p_Y$ based on the
 nested query generated as part of the definition of $Q_W$ (and which was found 
@@ -345,7 +345,7 @@ filters in a distributed environment.
 \end{comment}
 
 
-We take a bottom-up approach to building the symbolic filters as it allows us 
+We take a bottom-up approach to building the filters as it allows us 
 to outline an evaluation strategy that operates over sets and which uses set 
 operations like union, intersection, set membership or emptiness testing. 
 Adopting such a set-centric evaluation strategy is advantageous in a 
@@ -398,7 +398,7 @@ of employing several abstractions during the process outlined for deriving the
 precise filters.  
 
 
-First of all, we remark that the sets we abstract over contain tuples as 
+First, sets we abstract over contain tuples as 
 opposed to single values, where each tuple field holds the values relevant to a 
 particular join predicate. 
 Similarly, the abstractions we chose need to be multidimensional in the sense 
