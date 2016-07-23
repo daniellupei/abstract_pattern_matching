@@ -263,14 +263,17 @@ searched for an item, read a sequence of reviews, before deciding to
 purchase. In particular, we want the user to perform no other actions
 between the search and purchase actions. 
 
-\begin{comment}
+
 The mining task is described in terms of the pattern SR*P, with each event 
 variable annotated by its own guard:
 \begin{align*}
 \text{{\bf S}} \in \Ev&: \facc{S}{name} = ``S"
 \\
-\text{{\bf R}} \in \Ev&: (\facc{R}{user} = \facc{S}{user} \rightarrow
-\facc{R}{name} = ``R")
+\text{{\bf R}} \in \Ev&: 
+\facc{R}{name} = ``R"
+\vee
+(\facc{R}{name} \neq ``R") . 
+(\facc{R}{user} \neq \facc{S}{user})
 \\
 \text{{\bf P}} \in \Ev&: (\facc{P}{name} = ``P") . 
 (\facc{P}{user} = \facc{S}{user}) . 
@@ -284,6 +287,7 @@ the name of the event to be matched), as well as join predicates that make sure
 that the matched events are correlated by the id of the user that performed 
 them and that the ``Purchase'' event occurs within a timeout $t_{out}$ from the 
 ``Search'' event. 
+\begin{comment}
 In addition, figure~\ref{fig:srp_pattern} presents the symbolic automata 
 representation of the pattern, i.e.\ the state machine where each transition 
 has an associated event variable and a corresponding guard.
@@ -307,10 +311,10 @@ For instance, we can express our example pattern as a SQL query as follows:
 	AND P.name == "P" AND P.time < S.time + t_out
 	AND P.user == S.user
 	AND NOT EXISTS ( 
-	SELECT * FROM Ev NR
-	WHERE S.time < NR.time AND NR.time < P.time
-	AND NR.user == S.user
-	AND NR.name != "R" ); 
+	    SELECT * FROM Ev NR
+	    WHERE NR.name != "R"
+	    AND S.time < NR.time AND NR.time < P.time
+	    AND NR.user == S.user ); 
 	\end{verbatim}
 }
 
@@ -350,15 +354,22 @@ consisting of the initial and final event in the match.
 In the following we discuss our approach for performing this pre-processing step
 in a time and space efficient manner.  
 
-We start by defining for each event variable $X$ of the pattern a 
-{\em symbolic set} $\syms{X}$, which collects the values of $X$'s fields that 
+We start by defining for each event variable $X$ of the pattern 
+{\em symbolic sets} $\syms{X}$, which collect the values of $X$'s fields that 
 are joined by the query, based on the input events matching its selection 
-predicates. 
+predicates (for transition R, we get two such symbolic sets $\syms{R}$ and 
+$\syms{\oR},$ as its guard has two disjoint selection predicates.). 
 \begin{align*}
 \syms{S} 
 &\coloneq 
 \{ \tuple{\facc{S}{t}, \facc{S}{user}} \mid 
 S \in \Ev: \facc{S}{name} = \text{``S''}
+\}
+\\
+\syms{R} 
+&\coloneq 
+\{ \facc{R}{t} \mid 
+R \in \Ev: \facc{R}{name} = \text{``R''}
 \}
 \\
 \syms{\oR} 
@@ -373,9 +384,11 @@ NR \in \Ev: \facc{NR}{name} \neq \text{``R''}
 P \in \Ev: \facc{P}{name} = \text{``P''}
 \}
 \end{align*}
-We introduce a temporal slicing operator that simplifies our
+
+
+We introduce a slicing operator that simplifies our
 notation. Given a set $S$ of tuples $\tuple{s_1,s_2,\ldots,s_n}$ and
-unary predications $\phi_1, \phi_2, \ldots, \phi_n$, we define the
+unary predicates $\phi_1, \phi_2, \ldots, \phi_n$, we define the
 slicing operator:
 $$\slice{S}{\phi_1, \phi_2, \ldots, \phi_n} =
 \{\tuple{s_1,s_2,\ldots,s_n} \mid \bigwedge_{i=1}^{n}\phi_i(s_i)\}
@@ -384,7 +397,7 @@ We will also represent $u_=(t)$ for the unary predicate that determines if
 $t$ is equal to $u$, and $(l,u)_\in(t)$ for the unary predicate that
 determines if $t$ is in the (open) time interval $(l,u)$.
 
-Now, We re-write the query, first using comprehension syntax, 
+Next, we re-write the query, first using comprehension syntax, 
 and then using the slicing operator:
 \begin{align*}
 &
@@ -484,30 +497,58 @@ For this example pattern we get the following filters:
 {(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t})_\in,\; \facc{\symv{s}}{user}_=}
 = \emptyset 
 \\
-\precs{\oR}(\symv{r}) 
+\precs{R}(\symv{r}) 
 &\equiv
 \slice{Q}
 {(-\infty\,:\,\facc{\symv{r}}{t})_\in, 
-	\facc{\symv{r}}{user}_=, 
-	(\facc{\symv{r}}{t}\,:\,\infty)_\in, 
-	\facc{\symv{r}}{user}_=} 
+	(\facc{\symv{r}}{t}\,:\,\infty)_\in}
 \neq \emptyset 
 \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 &\equiv
 \exists \symv{s} \in 
-\slice{\syms{S}}{(-\infty\,:\,\facc{\symv{r}}{t})_\in, \facc{\symv{r}}{user}_=},
+\slice{\syms{S}}{(-\infty\,:\,\facc{\symv{r}}{t})_\in, \texttt{true}},
 \\
 &\quad
 \exists \symv{p} \in 
 \slice{\syms{P}}
-{(\max(\facc{\symv{s}}{t},\facc{\symv{r}}{t})\,:\,\facc{\symv{s}}{t} + t_{out})_\in,
-	\facc{\symv{r}}{user}_=}
+{(\max(\facc{\symv{s}}{t},\facc{\symv{r}}{t})\,:\,\facc{\symv{s}}{t} + 
+t_{out})_\in,
+	\facc{\symv{s}}{user}_=}
 : 
 \\ 
 &\qquad\quad
 \slice{\syms{\oR}}
-{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t})_\in,\; \facc{\symv{r}}{user}_=} 
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t})_\in,\; \facc{\symv{s}}{user}_=} 
+= \emptyset  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\\
+\precs{\oR}(\symv{nr}) 
+&\equiv
+\slice{Q}
+{(-\infty\,:\,\facc{\symv{nr}}{t})_\in, 
+	\facc{\symv{nr}}{user}_{\neq}, 
+	(\facc{\symv{nr}}{t}\,:\,\infty)_\in, 
+	\texttt{true}} 
+\neq \emptyset 
+\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+&\equiv
+\exists \symv{s} \in 
+\slice{\syms{S}}{(-\infty\,:\,\facc{\symv{nr}}{t})_\in, 
+\facc{\symv{nr}}{user}_\neq},
+\\
+&\quad
+\exists \symv{p} \in 
+\slice{\syms{P}}
+{(\max(\facc{\symv{s}}{t},\facc{\symv{nr}}{t})\,:\,\facc{\symv{s}}{t} + 
+t_{out})_\in,
+	\facc{\symv{s}}{user}_=}
+: 
+\\ 
+&\qquad\quad
+\slice{\syms{\oR}}
+{(\facc{\symv{s}}{t}\,:\,\facc{\symv{p}}{t})_\in,\; \facc{\symv{s}}{user}_=} 
 = \emptyset  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \\
@@ -524,7 +565,10 @@ For this example pattern we get the following filters:
 = \emptyset,
 \end{align*}
 which when applied to their corresponding symbolic set will retain only those 
-events that contribute to the output of $Q$. 
+events that contribute to the output of $Q$.
+We detail the procedure for generating these precise filters from the 
+relational query expressing the pattern in 
+section~\ref{sec:prec_filter_generation}. 
 
 Because evaluating these filters would in many cases be as expensive as 
 computing
@@ -546,12 +590,13 @@ that generate conservative versions of the original filters.
 \newcommand{\uinterval}[1]{\lceil #1 \rfloor}
 \newcommand{\hashid}[1]{\# #1}
 
-% We showcase our techniques on the filter corresponding to the S event 
-%variable,
-% which highlights the fact that the only Search events in the output are 
-%those  
-% that have only Read-review events between themselves and the next Purchase 
-% events occurring within a $t_{out}$ window of time.
+ We showcase our techniques on the filter corresponding to the S event 
+variable,
+ which highlights the fact that the Search events in the output are 
+those  
+ that have only Read-review events by that same user between themselves and the 
+ next Purchase 
+ event occurring within a $t_{out}$ window of time.
 
 \begin{comment}
 we first complement in order to obtain the set of "Search" events that we 
@@ -571,10 +616,13 @@ want discarded.
 \end{align*}
 \end{comment}
 
-User's that search for a product must (i) optionally read a review and
-ultimately, (ii) purchase a product \emph{within} a window of $t_{out}$
-time. \emph{Data abstraction} computes in a time and space efficient
-representation of sets $\syms{S}$ and $\syms{\oR}$.  For example, one could
+%User's that search for a product must (i) optionally read a review and
+%ultimately, (ii) purchase a product \emph{within} a window of $t_{out}$
+%time. 
+
+\emph{Data abstraction} provides time and space efficient
+representations for symbolic sets $\syms{S}$ and $\syms{\oR}$.  
+For example, one could
 abstract over time and coarsen timestamps $t$ into time intervals
 $\interval{t}$.  Then, the time dimension of sets $\syms{S}$, $\syms{\oR}$ could
 be efficiently encoded and queried as interval maps (i.e., bit vectors where
