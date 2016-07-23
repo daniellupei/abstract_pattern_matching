@@ -368,7 +368,7 @@ S \in \Ev: \facc{S}{name} = \text{``S''}
 \\
 \syms{R} 
 &\coloneq 
-\{ \facc{R}{t} \mid 
+\{ \tuple{\facc{R}{t}} \mid 
 R \in \Ev: \facc{R}{name} = \text{``R''}
 \}
 \\
@@ -500,8 +500,10 @@ For this example pattern we get the following filters:
 \precs{R}(\symv{r}) 
 &\equiv
 \slice{Q}
-{(-\infty\,:\,\facc{\symv{r}}{t})_\in, 
-	(\facc{\symv{r}}{t}\,:\,\infty)_\in}
+{(-\infty\,:\,\facc{\symv{r}}{t})_\in,
+	\texttt{true}, 
+	(\facc{\symv{r}}{t}\,:\,\infty)_\in,
+	\texttt{true}}
 \neq \emptyset 
 \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
